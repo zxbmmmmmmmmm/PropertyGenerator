@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "1": {
+      "commandName": "DebugRoslynComponent",
+      "targetProject": "..\\PropertyGenerator.Avalonia\\PropertyGenerator.Avalonia.csproj"
+    }
+  }
+}

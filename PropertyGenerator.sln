@@ -1,0 +1,28 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PropertyGenerator.Avalonia.Generator", "PropertyGenerator.Avalonia.Generator\PropertyGenerator.Avalonia.Generator.csproj", "{F255DD47-398E-46F0-8225-57CD2CE67BCE}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PropertyGenerator.Avalonia.Sample", "PropertyGenerator.Avalonia.Sample\PropertyGenerator.Avalonia.Sample.csproj", "{0B6D5E99-E3C1-4A57-AE96-C65B45797333}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PropertyGenerator.Avalonia", "PropertyGenerator.Avalonia\PropertyGenerator.Avalonia.csproj", "{7265E4E1-3C87-41B8-8DC8-A72C026CD33D}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{F255DD47-398E-46F0-8225-57CD2CE67BCE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F255DD47-398E-46F0-8225-57CD2CE67BCE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F255DD47-398E-46F0-8225-57CD2CE67BCE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F255DD47-398E-46F0-8225-57CD2CE67BCE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0B6D5E99-E3C1-4A57-AE96-C65B45797333}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0B6D5E99-E3C1-4A57-AE96-C65B45797333}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0B6D5E99-E3C1-4A57-AE96-C65B45797333}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0B6D5E99-E3C1-4A57-AE96-C65B45797333}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7265E4E1-3C87-41B8-8DC8-A72C026CD33D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7265E4E1-3C87-41B8-8DC8-A72C026CD33D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7265E4E1-3C87-41B8-8DC8-A72C026CD33D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7265E4E1-3C87-41B8-8DC8-A72C026CD33D}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
