@@ -70,76 +70,42 @@ public class StyledPropertyGenerator : IIncrementalGenerator
         }
 
         var complicationUnit = CompilationUnit()
-            .AddUsings(
-                UsingDirective(
-                    IdentifierName("Avalonia")))
-            .AddMembers(
-                NamespaceDeclaration(ParseName(namespaceName))
-                .AddMembers(classDeclaration));
+            .AddUsings(UsingDirective(IdentifierName("Avalonia")))
+            .AddMembers(NamespaceDeclaration(ParseName(namespaceName)).AddMembers(classDeclaration))
+            .WithLeadingTrivia(Trivia(NullableDirectiveTrivia(Token(SyntaxKind.EnableKeyword), true)),
+                Trivia(PragmaWarningDirectiveTrivia(Token(SyntaxKind.DisableKeyword), true)));
 
         return SyntaxTree(complicationUnit.NormalizeWhitespace()).ToString();
     }
+    
     private static FieldDeclarationSyntax GenerateStyledProperty(Compilation compilation, INamedTypeSymbol classSymbol, IPropertySymbol propertySymbol)
     {
         var propertyName = propertySymbol.Name;
         var propertyType = propertySymbol.Type.ToDisplayString();
         var className = classSymbol.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat);
-        var styledPropertySymbol = compilation.GetTypeByMetadataName("Avalonia.StyledProperty`1")!;
-        var avaloniaPropertySymbol = compilation.GetTypeByMetadataName("Avalonia.AvaloniaProperty")!;
+        var styledPropertySymbol = compilation.GetTypeByMetadataName("Avalonia.StyledProperty`1")!
+            .Construct([propertySymbol.Type], [propertySymbol.NullableAnnotation])
+            .ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+        var avaloniaPropertySymbol = compilation.GetTypeByMetadataName("Avalonia.AvaloniaProperty")!
+            .ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
 
-
-        var fieldDeclaration = FieldDeclaration(//StyledProperty
+        var fieldDeclaration = FieldDeclaration( //StyledProperty
             VariableDeclaration(
-                ParseTypeName(
-                    styledPropertySymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)))
-            .WithVariables(
-                SingletonSeparatedList(
-                    VariableDeclarator(
-                        Identifier("IsStartedProperty"))
-                    .WithInitializer(
-                        EqualsValueClause(
-                            InvocationExpression(
-                                MemberAccessExpression(
-                                    SyntaxKind.SimpleMemberAccessExpression,
-                                    IdentifierName(avaloniaPropertySymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)),
-                                    GenericName(
-                                        Identifier("Register"))
-                                    .WithTypeArgumentList(
-                                        TypeArgumentList(
-                                            SeparatedList<TypeSyntax>(
-                                                [
-                                                    IdentifierName(className),
-                                                    Token(SyntaxKind.CommaToken),
-                                                    PredefinedType(Token(SyntaxKind.BoolKeyword))
-                                                ])))))
-                            .WithArgumentList(
-                                ArgumentList(
-                                    SeparatedList<ArgumentSyntax>(
-                                        [
-                                            Argument(
-                                                InvocationExpression(
-                                                    IdentifierName(
-                                                        Identifier(
-                                                            TriviaList(),
-                                                            SyntaxKind.NameOfKeyword,
-                                                            "nameof",
-                                                            "nameof",
-                                                            TriviaList())))
-                                                .WithArgumentList(
-                                                    ArgumentList(
-                                                        SingletonSeparatedList(
-                                                            Argument(
-                                                                IdentifierName(propertyName)))))),
-                                            Token(SyntaxKind.CommaToken),
-                                            Argument(
-                                                PostfixUnaryExpression(
-                                                    SyntaxKind.SuppressNullableWarningExpression,
-                                                    LiteralExpression(
-                                                        SyntaxKind.DefaultLiteralExpression,
-                                                        Token(SyntaxKind.DefaultKeyword))))
-                                            .WithNameColon(
-                                                NameColon(
-                                                    IdentifierName("defaultValue")))]))))))));
+                    IdentifierName(styledPropertySymbol))
+                .WithVariables(SingletonSeparatedList(VariableDeclarator(Identifier("IsStartedProperty"))
+                    .WithInitializer(EqualsValueClause(InvocationExpression(MemberAccessExpression(
+                            SyntaxKind.SimpleMemberAccessExpression,
+                            IdentifierName(avaloniaPropertySymbol),
+                            GenericName(Identifier("Register"))
+                                .AddTypeArgumentListArguments(
+                                    IdentifierName(className),
+                                    PredefinedType(Token(SyntaxKind.BoolKeyword)))))
+                        .AddArgumentListArguments(
+                            Argument(NameOfExpression(propertyName)),
+                            Argument(PostfixUnaryExpression(
+                                    SyntaxKind.SuppressNullableWarningExpression,
+                                    LiteralExpression(SyntaxKind.DefaultLiteralExpression)))
+                                .WithNameColon(NameColon(IdentifierName("defaultValue")))))))));
         return fieldDeclaration;
     }
 
@@ -151,46 +117,20 @@ public class StyledPropertyGenerator : IIncrementalGenerator
 
         var propertyDeclaration =
             PropertyDeclaration(
-                PredefinedType(
-                    Token(SyntaxKind.BoolKeyword)),
-                Identifier("IsStarted"))
-            .WithModifiers(
-                TokenList(
-                    Token(SyntaxKind.PublicKeyword),
-                    Token(SyntaxKind.PartialKeyword)))
-            .WithAccessorList(
-                AccessorList(
-                    List(
-                        [AccessorDeclaration(
-                                SyntaxKind.GetAccessorDeclaration)
-                            .WithExpressionBody(
-                                ArrowExpressionClause(
-                                    InvocationExpression(
-                                        IdentifierName("GetValue"))
-                                    .WithArgumentList(
-                                        ArgumentList(
-                                            SingletonSeparatedList(
-                                                Argument(
-                                                    IdentifierName($"{propertyName}Property")))))))
-                            .WithSemicolonToken(
-                                Token(SyntaxKind.SemicolonToken)),
-                            AccessorDeclaration(
-                                SyntaxKind.SetAccessorDeclaration)
-                            .WithExpressionBody(
-                                ArrowExpressionClause(
-                                    InvocationExpression(
-                                        IdentifierName("SetValue"))
-                                    .WithArgumentList(
-                                        ArgumentList(
-                                            SeparatedList<ArgumentSyntax>(
-                                                new SyntaxNodeOrToken[]{
-                                                    Argument(
-                                                        IdentifierName($"{propertyName}Property")),
-                                                    Token(SyntaxKind.CommaToken),
-                                                    Argument(
-                                                        IdentifierName("value"))})))))
-                            .WithSemicolonToken(
-                                Token(SyntaxKind.SemicolonToken))])));
+                    PredefinedType(Token(SyntaxKind.BoolKeyword)),
+                    Identifier("IsStarted"))
+                .AddModifiers(Token(SyntaxKind.PublicKeyword), Token(SyntaxKind.PartialKeyword))
+                .AddAccessorListAccessors(
+                    AccessorDeclaration(SyntaxKind.GetAccessorDeclaration)
+                        .WithExpressionBody(ArrowExpressionClause(InvocationExpression(IdentifierName("GetValue"))
+                            .AddArgumentListArguments(Argument(IdentifierName($"{propertyName}Property")))))
+                        .WithSemicolonToken(Token(SyntaxKind.SemicolonToken)),
+                    AccessorDeclaration(SyntaxKind.SetAccessorDeclaration)
+                        .WithExpressionBody(ArrowExpressionClause(InvocationExpression(IdentifierName("SetValue"))
+                            .AddArgumentListArguments(
+                                Argument(IdentifierName($"{propertyName}Property")),
+                                Argument(IdentifierName("value")))))
+                        .WithSemicolonToken(Token(SyntaxKind.SemicolonToken)));
         return propertyDeclaration;
     }
 
@@ -209,4 +149,22 @@ public class StyledPropertyGenerator : IIncrementalGenerator
         }
         return false;
     }
+    
+    /// <summary>
+    /// Generate the following code
+    /// <code>
+    /// nameof(<paramref name="name" />)
+    /// </code>
+    /// </summary>
+    /// <returns>NameOfExpression</returns>
+    internal static InvocationExpressionSyntax NameOfExpression(string name) => NameOfExpression(IdentifierName(name));
+
+    /// <summary>
+    /// Generate the following code
+    /// <code>
+    /// nameof(<paramref name="expressionSyntax" />)
+    /// </code>
+    /// </summary>
+    /// <returns>NameOfExpression</returns>
+    internal static InvocationExpressionSyntax NameOfExpression(ExpressionSyntax expressionSyntax) => InvocationExpression(IdentifierName("nameof"), ArgumentList().AddArguments(Argument(expressionSyntax)));
 }
