@@ -1,16 +1,10 @@
-﻿using System;
-using System.CodeDom.Compiler;
-using System.Collections.Generic;
-using System.Collections.Immutable;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
-using PropertyGenerator.Avalonia;
-using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
 namespace PropertyGenerator.Avalonia.Generator;
@@ -83,23 +77,25 @@ public class StyledPropertyGenerator : IIncrementalGenerator
         var propertyName = propertySymbol.Name;
         var propertyType = propertySymbol.Type.ToDisplayString();
         var className = classSymbol.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat);
-        var styledPropertySymbol = compilation.GetTypeByMetadataName("Avalonia.StyledProperty`1")!
+        var styledPropertySymbolName = compilation.GetTypeByMetadataName("Avalonia.StyledProperty`1")!
             .Construct([propertySymbol.Type], [propertySymbol.NullableAnnotation])
             .ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
-        var avaloniaPropertySymbol = compilation.GetTypeByMetadataName("Avalonia.AvaloniaProperty")!
+        var avaloniaPropertySymbolName = compilation.GetTypeByMetadataName("Avalonia.AvaloniaProperty")!
+            .ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+        var generatedCodeSymbolName = compilation.GetTypeByMetadataName("System.CodeDom.Compiler.GeneratedCode")!
             .ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
 
         var fieldDeclaration = FieldDeclaration( //StyledProperty
             VariableDeclaration(
-                    IdentifierName(styledPropertySymbol))
-                .WithVariables(SingletonSeparatedList(VariableDeclarator(Identifier("IsStartedProperty"))
+                    IdentifierName(styledPropertySymbolName))
+                .WithVariables(SingletonSeparatedList(VariableDeclarator(Identifier($"{propertyName}Property"))
                     .WithInitializer(EqualsValueClause(InvocationExpression(MemberAccessExpression(
                             SyntaxKind.SimpleMemberAccessExpression,
-                            IdentifierName(avaloniaPropertySymbol),
+                            IdentifierName(avaloniaPropertySymbolName),
                             GenericName(Identifier("Register"))
                                 .AddTypeArgumentListArguments(
                                     IdentifierName(className),
-                                    PredefinedType(Token(SyntaxKind.BoolKeyword)))))
+                                    ParseTypeName(propertyType))))
                         .AddArgumentListArguments(
                             Argument(NameOfExpression(propertyName)),
                             Argument(PostfixUnaryExpression(
@@ -116,9 +112,7 @@ public class StyledPropertyGenerator : IIncrementalGenerator
         var className = classSymbol.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat);
 
         var propertyDeclaration =
-            PropertyDeclaration(
-                    PredefinedType(Token(SyntaxKind.BoolKeyword)),
-                    Identifier("IsStarted"))
+            PropertyDeclaration(ParseTypeName(propertyType),Identifier(propertyName))
                 .AddModifiers(Token(SyntaxKind.PublicKeyword), Token(SyntaxKind.PartialKeyword))
                 .AddAccessorListAccessors(
                     AccessorDeclaration(SyntaxKind.GetAccessorDeclaration)

@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Avalonia;
 using Avalonia.Controls;
 using PropertyGenerator.Avalonia;
@@ -12,5 +13,9 @@ public partial class MainWindow : Window
     }
     
     [GeneratedStyledProperty]
-    public partial bool IsStarted { get; set; }
+    public partial bool? IsStarted { get; set; }
+    
+    
+    [GeneratedStyledProperty]
+    public partial List<bool?> IsStarted2 { get; set; }
 }
