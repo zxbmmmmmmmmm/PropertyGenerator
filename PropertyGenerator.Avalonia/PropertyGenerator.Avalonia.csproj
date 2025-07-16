@@ -12,4 +12,8 @@
         <None Include="PropertyGenerator.Avalonia.Generator.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
     </ItemGroup>
 
+    <ItemGroup>
+      <PackageReference Include="Avalonia" Version="11.3.0" />
+    </ItemGroup>
+
 </Project>
