@@ -164,9 +164,6 @@ public class StyledPropertyGenerator : IIncrementalGenerator
                 case "Inherits":
                     inherits = (bool?)value;
                     break;
-                case "DefaultBindingMode":
-                    bindingMode = (string?)value;
-                    break;
                 case "Validate":
                     validate = (string?)value;
                     break;
@@ -193,8 +190,16 @@ public class StyledPropertyGenerator : IIncrementalGenerator
 
         if (defaultValue is not AvaloniaPropertyDefaultValue.UnsetValue)
         {
-            arguments.Add(Argument(IdentifierName(defaultValue.ToString()))
-                .WithNameColon(NameColon(IdentifierName("defaultValue"))));
+            if(defaultValue is AvaloniaPropertyDefaultValue.Callback)
+            {
+                arguments.Add(Argument(InvocationExpression(IdentifierName(defaultValue.ToString())))
+                    .WithNameColon(NameColon(IdentifierName("defaultValue"))));
+            }
+            else
+            {
+                arguments.Add(Argument(IdentifierName(defaultValue.ToString()))
+                    .WithNameColon(NameColon(IdentifierName("defaultValue"))));
+            }
         }
 
         if (validate is not null)
@@ -219,6 +224,12 @@ public class StyledPropertyGenerator : IIncrementalGenerator
         {
             arguments.Add(Argument(IdentifierName(inherits.ToString().ToLower()))
                 .WithNameColon(NameColon(IdentifierName("inherits"))));
+        }
+
+        if (attribute.TryGetNamedArgument("DefaultBindingMode", out TypedConstant defaultBindingMode))
+        {
+            arguments.Add(Argument(IdentifierName(TypedConstantInfo.Create(defaultBindingMode).ToString()))
+                .WithNameColon(NameColon(IdentifierName("defaultBindingMode"))));
         }
 
         var fieldDeclaration = FieldDeclaration( //StyledProperty
