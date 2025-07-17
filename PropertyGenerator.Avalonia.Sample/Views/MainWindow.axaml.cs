@@ -11,45 +11,41 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+        IsRunningProperty.Changed.AddClassHandler<MainWindow>((s,e) =>
+        {
+        });
     }
-    
+
+    [GeneratedStyledProperty]
+    public partial bool? IsRunning { get; set; }
+
     [GeneratedStyledProperty(DefaultValueCallback = nameof(DefaultValueCallback),DefaultValue = true, Validate = nameof(Validate),Coerce = nameof(Coerce),EnableDataValidation = true,Inherits = true, DefaultBindingMode = BindingMode.TwoWay)]
     public partial bool? IsStarted { get; set; }
     private static bool DefaultValueCallback()
     {
         return true;
     }
-
-    /// <summary>
-    /// IsCapable StyledProperty definition
-    /// </summary>
-    public static readonly StyledProperty<bool> IsCapableProperty =
-        AvaloniaProperty.Register<MainWindow, bool>(nameof(IsCapable), DefaultValueCallback());
-
-    /// <summary>
-    /// Gets or sets the IsCapable property. This StyledProperty 
-    /// indicates ....
-    /// </summary>
-    public bool IsCapable
-    {
-        get => this.GetValue(IsCapableProperty);
-        set => SetValue(IsCapableProperty, value);
-    }
-
-
-    [GeneratedStyledProperty]
-    public partial List<bool?> IsStarted2 { get; set; }
-
     private static bool Validate(bool? value)
     {
         return true;
     }
-    
-    private static bool? Coerce(AvaloniaObject x,bool? y)
+    private static bool? Coerce(AvaloniaObject x, bool? y)
     {
-        return y;
+        return true;
     }
-
-
+    protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
+    {
+        switch (change.Property.Name)
+        {
+            case nameof(IsRunning):
+                OnIsRunningChanged((bool?)change.OldValue, (bool?)change.NewValue);
+                break;
+            case nameof(IsStarted):
+                OnIsStartingChanged((bool?)change.OldValue, (bool?)change.NewValue);
+                break;
+        }
+    }
+    private partial void OnIsRunningChanged(bool? oldValue, bool? newValue);
+    private partial void OnIsStartingChanged(bool? oldValue, bool? newValue);
 
 }
