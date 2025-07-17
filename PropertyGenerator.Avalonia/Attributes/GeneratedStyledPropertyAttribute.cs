@@ -8,7 +8,7 @@ namespace PropertyGenerator.Avalonia;
 public sealed class GeneratedStyledPropertyAttribute: Attribute
 {
     public object? DefaultValue { get; set; }
-    
+    public string? DefaultValueCallback { get; set; }
     public bool Inherits { get ; set; }
     
     public BindingMode DefaultBindingMode { get ; set; } = BindingMode.OneWay;
