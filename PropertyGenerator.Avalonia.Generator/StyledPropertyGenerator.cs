@@ -87,9 +87,9 @@ public class StyledPropertyGenerator : IIncrementalGenerator
             classDeclaration = classDeclaration.AddMembers(GeneratePropertyDeclaration(compilation, classSymbol, prop));
             //classDeclaration = classDeclaration.AddMembers(GenerateGetMethod(compilation, classSymbol, prop));
             //classDeclaration = classDeclaration.AddMembers(GenerateSetMethod(compilation, classSymbol, prop));
-            //classDeclaration = classDeclaration.AddMembers(GenerateChangedMethod(compilation, classSymbol, prop));
+            classDeclaration = classDeclaration.AddMembers(GenerateChangedMethod(compilation, classSymbol, prop));
         }
-
+        classDeclaration = classDeclaration.AddMembers(GenerateOnPropertyChangedOverride(compilation, classSymbol, properties));
         var namespaceDeclarationSyntax = NamespaceDeclaration(ParseName(namespaceName)).AddMembers(classDeclaration);
         return namespaceDeclarationSyntax;
     }
@@ -223,8 +223,6 @@ public class StyledPropertyGenerator : IIncrementalGenerator
             .AddAttributeLists(
                 AttributeList(
                     SingletonSeparatedList(GeneratedCodeAttribute())));
-                
-
         return fieldDeclaration;
     }
 
@@ -251,7 +249,97 @@ public class StyledPropertyGenerator : IIncrementalGenerator
 
         return propertyDeclaration;
     }
-    
+
+    private static MethodDeclarationSyntax GenerateOnPropertyChangedOverride(Compilation compilation, INamedTypeSymbol classSymbol, List<IPropertySymbol> properties)
+    {
+
+        var switchStatement =
+            SwitchStatement(
+                MemberAccessExpression(
+                    SyntaxKind.SimpleMemberAccessExpression,
+                    MemberAccessExpression(
+                        SyntaxKind.SimpleMemberAccessExpression,
+                        IdentifierName("change"),
+                        IdentifierName("Property")),
+                    IdentifierName("Name")));
+        foreach (var propertySymbol in properties)
+        {
+            var propertyName = propertySymbol.Name;
+            var propertyType = propertySymbol.Type.ToDisplayString();
+
+            switchStatement = switchStatement
+                .AddSections(
+                        SwitchSection()
+                        .AddLabels(CaseSwitchLabel(
+                            InvocationExpression(
+                                    IdentifierName(
+                                        Identifier(
+                                            TriviaList(),
+                                            SyntaxKind.NameOfKeyword,
+                                            "nameof",
+                                            "nameof",
+                                            TriviaList())))
+                                .AddArgumentListArguments(
+                                    Argument(IdentifierName(propertyName)))))
+                        .AddStatements(
+                                    ExpressionStatement(
+                                        InvocationExpression(
+                                            IdentifierName("OnIsRunningChanged"))
+                                        .AddArgumentListArguments(Argument(
+                                            CastExpression(ParseTypeName(propertyType),
+                                                MemberAccessExpression(
+                                                    SyntaxKind.SimpleMemberAccessExpression,
+                                                    IdentifierName("change"),
+                                                    IdentifierName("NewValue")))))),
+                                    ExpressionStatement(
+                                        InvocationExpression(
+                                            IdentifierName("OnIsRunningChanged"))
+                                        .AddArgumentListArguments(
+                                                        Argument(
+                                                            CastExpression(
+                                                                ParseTypeName(propertyType),
+                                                                MemberAccessExpression(
+                                                                    SyntaxKind.SimpleMemberAccessExpression,
+                                                                    IdentifierName("change"),
+                                                                    IdentifierName("OldValue")))),
+                                                        Argument(
+                                                            CastExpression(
+                                                                NullableType(
+                                                                    PredefinedType(
+                                                                        Token(SyntaxKind.BoolKeyword))),
+                                                                MemberAccessExpression(
+                                                                    SyntaxKind.SimpleMemberAccessExpression,
+                                                                    IdentifierName("change"),
+                                                                    IdentifierName("NewValue")))))),
+                                    BreakStatement()));
+
+        }
+        var methodDeclaration = MethodDeclaration(
+                PredefinedType(
+                    Token(SyntaxKind.VoidKeyword)),
+                Identifier("OnPropertyChanged"))
+            .AddModifiers(Token(SyntaxKind.ProtectedKeyword),
+                Token(SyntaxKind.OverrideKeyword))
+            .AddParameterListParameters(
+                Parameter(Identifier("change"))
+                    .WithType(IdentifierName("global::Avalonia.AvaloniaPropertyChangedEventArgs")))
+            .WithBody(
+                Block(
+                    ExpressionStatement(
+                        InvocationExpression(
+                                MemberAccessExpression(
+                                    SyntaxKind.SimpleMemberAccessExpression,
+                                    BaseExpression(),
+                                    IdentifierName("OnPropertyChanged")))
+                            .AddArgumentListArguments(
+                                Argument(
+                                    IdentifierName("change")))),
+                    switchStatement
+                ));
+        return methodDeclaration;
+    }
+
+
     private static MethodDeclarationSyntax GenerateGetMethod(Compilation compilation, INamedTypeSymbol classSymbol, IPropertySymbol propertySymbol)
     {
         var propertyName = propertySymbol.Name;
@@ -288,11 +376,11 @@ public class StyledPropertyGenerator : IIncrementalGenerator
         return onSet;
     }
 
-    private static MethodDeclarationSyntax GenerateChangedMethod(Compilation compilation, INamedTypeSymbol classSymbol, IPropertySymbol propertySymbol)
+    private static MemberDeclarationSyntax[] GenerateChangedMethod(Compilation compilation, INamedTypeSymbol classSymbol, IPropertySymbol propertySymbol)
     {
         var propertyName = propertySymbol.Name;
 
-        var onSet = MethodDeclaration(PredefinedType(Token(SyntaxKind.VoidKeyword)), Identifier($"On{propertyName}Changed"))
+        var methodDeclaration = MethodDeclaration(PredefinedType(Token(SyntaxKind.VoidKeyword)), Identifier($"On{propertyName}Changed"))
             .AddModifiers(Token(SyntaxKind.PartialKeyword))
             .AddParameterListParameters(
                 Parameter(Identifier("newValue"))
@@ -302,7 +390,18 @@ public class StyledPropertyGenerator : IIncrementalGenerator
             .AddAttributeLists(
                 AttributeList(
                     SingletonSeparatedList(GeneratedCodeAttribute())));
-        return onSet;
+        var methodDeclarationWithOldValue = MethodDeclaration(PredefinedType(Token(SyntaxKind.VoidKeyword)), Identifier($"On{propertyName}Changed"))
+            .AddModifiers(Token(SyntaxKind.PartialKeyword))
+            .AddParameterListParameters(
+                Parameter(Identifier("oldValue"))
+                    .WithType(IdentifierName(propertySymbol.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat))),
+                Parameter(Identifier("newValue"))
+                    .WithType(IdentifierName(propertySymbol.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat))))
+            .WithSemicolonToken(Token(SyntaxKind.SemicolonToken))
+            .AddAttributeLists(
+                AttributeList(
+                    SingletonSeparatedList(GeneratedCodeAttribute())));
+        return [methodDeclaration,methodDeclarationWithOldValue];
     }
 
     private static AttributeSyntax GeneratedCodeAttribute()

@@ -33,19 +33,4 @@ public partial class MainWindow : Window
     {
         return true;
     }
-    protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
-    {
-        switch (change.Property.Name)
-        {
-            case nameof(IsRunning):
-                OnIsRunningChanged((bool?)change.OldValue, (bool?)change.NewValue);
-                break;
-            case nameof(IsStarted):
-                OnIsStartingChanged((bool?)change.OldValue, (bool?)change.NewValue);
-                break;
-        }
-    }
-    private partial void OnIsRunningChanged(bool? oldValue, bool? newValue);
-    private partial void OnIsStartingChanged(bool? oldValue, bool? newValue);
-
 }
