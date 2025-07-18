@@ -201,8 +201,8 @@ public class StyledPropertyGenerator : IIncrementalGenerator
                             .AddArgumentListArguments(
                                 Argument(IdentifierName($"{propertyName}Property")),
                                 Argument(IdentifierName("value")))))
-                        .WithSemicolonToken(Token(SyntaxKind.SemicolonToken)))
-                .WithLeadingTrivia(ParseLeadingTrivia($"/// <inheritdoc cref=\"{propertyName}\"/>\r\n"));
+                        .WithSemicolonToken(Token(SyntaxKind.SemicolonToken)));
+                //.WithLeadingTrivia(ParseLeadingTrivia($"/// <inheritdoc cref=\"{propertyName}\"/>\r\n"));
 
         return propertyDeclaration;
     }
