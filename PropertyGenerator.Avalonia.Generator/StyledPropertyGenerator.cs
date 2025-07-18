@@ -4,7 +4,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Operations;
 using Microsoft.CodeAnalysis.Text;
 using PropertyGenerator.Avalonia.Generator.Extensions;
-using PropertyGenerator.Avalonia.Models;
+using PropertyGenerator.Avalonia.Generator.Models;
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;

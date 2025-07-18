@@ -11,10 +11,10 @@ using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
-using PropertyGenerator.Avalonia.Helpers;
+using PropertyGenerator.Avalonia.Generator.Helpers;
 using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
-namespace PropertyGenerator.Avalonia.Models;
+namespace PropertyGenerator.Avalonia.Generator.Models;
 
 /// <summary>
 /// A model representing a typed constant item.

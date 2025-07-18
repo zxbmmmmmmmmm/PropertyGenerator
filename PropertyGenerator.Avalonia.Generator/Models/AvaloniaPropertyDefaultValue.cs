@@ -1,4 +1,4 @@
-namespace PropertyGenerator.Avalonia.Models;
+namespace PropertyGenerator.Avalonia.Generator.Models;
 
 internal abstract partial record AvaloniaPropertyDefaultValue
 {

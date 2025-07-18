@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Diagnostics.CodeAnalysis;
 using Microsoft.CodeAnalysis;
-using PropertyGenerator.Avalonia.Helpers;
+using PropertyGenerator.Avalonia.Generator.Helpers;
 
 namespace PropertyGenerator.Avalonia.Generator.Extensions;
 

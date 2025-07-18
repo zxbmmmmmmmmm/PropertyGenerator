@@ -10,12 +10,11 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
-using System.Runtime.InteropServices.ComTypes;
 using System.Threading;
 using PropertyGenerator.Avalonia.Generator.Extensions;
-using PropertyGenerator.Avalonia.Helpers;
+using PropertyGenerator.Avalonia.Generator.Helpers;
 
-namespace PropertyGenerator.Avalonia.Models;
+namespace PropertyGenerator.Avalonia.Generator.Models;
 
 /// <inheritdoc/>
 partial record TypedConstantInfo

@@ -6,7 +6,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using PropertyGenerator.Avalonia.Generator.Helpers;
 
-namespace PropertyGenerator.Avalonia.Helpers;
+namespace PropertyGenerator.Avalonia.Generator.Helpers;
 
 /// <summary>
 /// Extensions for <see cref="EquatableArray{T}"/>.

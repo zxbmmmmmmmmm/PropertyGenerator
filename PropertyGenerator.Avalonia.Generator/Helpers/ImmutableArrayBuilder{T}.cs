@@ -5,7 +5,7 @@ using System.Collections.Immutable;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
-namespace PropertyGenerator.Avalonia.Helpers;
+namespace PropertyGenerator.Avalonia.Generator.Helpers;
 
 /// <summary>
 /// A helper type to build sequences of values with pooled buffers.

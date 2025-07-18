@@ -4,7 +4,7 @@ using System.Threading;
 
 #pragma warning disable RS1035
 
-namespace PropertyGenerator.Avalonia.Helpers;
+namespace PropertyGenerator.Avalonia.Generator.Helpers;
 
 /// <summary>
 /// <para>
