@@ -6,6 +6,7 @@ using PropertyGenerator.Avalonia;
 
 namespace PropertyGenerator.Avalonia.Sample.Views;
 
+[DoNotGenerateOnPropertyChanged]
 public partial class MainWindow : Window
 {
     public MainWindow()
@@ -14,11 +15,18 @@ public partial class MainWindow : Window
         CountProperty.Changed.AddClassHandler<MainWindow>((s,e) =>
         {
         });
+        IsStarted = true;
     }
 
+    /// <summary>
+    /// AAA
+    /// </summary>
     [GeneratedStyledProperty]
     public partial int Count { get; set; }
 
+    /// <summary>
+    /// AAA
+    /// </summary>
     [GeneratedStyledProperty(
         DefaultValueCallback = nameof(DefaultValueCallback),
         DefaultValue = true,
@@ -28,6 +36,8 @@ public partial class MainWindow : Window
         Inherits = true,
         DefaultBindingMode = BindingMode.TwoWay)]
     public partial bool? IsStarted { get; set; }
+
+
     private static bool DefaultValueCallback()
     {
         return true;

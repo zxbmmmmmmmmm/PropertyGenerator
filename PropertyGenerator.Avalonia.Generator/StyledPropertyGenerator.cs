@@ -78,17 +78,20 @@ public class StyledPropertyGenerator : IIncrementalGenerator
     {
         var namespaceName = classSymbol.ContainingNamespace.ToDisplayString();
         var className = classSymbol.Name;
+        var doNotGenerateOnPropertyChangedAttributeSymbols = compilation.GetTypesByMetadataName("PropertyGenerator.Avalonia.DoNotGenerateOnPropertyChangedAttribute");
+        var generateOnPropertyChanged = !classSymbol.HasAttributeWithAnyType(doNotGenerateOnPropertyChangedAttributeSymbols);
 
         var classDeclaration = ClassDeclaration(className).AddModifiers(Token(SyntaxKind.PartialKeyword));
         foreach (var property in properties)
         {
             classDeclaration = classDeclaration.AddMembers(GenerateFieldDeclaration(compilation, classSymbol, property, model));
             classDeclaration = classDeclaration.AddMembers(GeneratePropertyDeclaration(compilation, classSymbol, property));
-            classDeclaration = classDeclaration.AddMembers(GenerateChangedMethod(compilation, classSymbol, property));
+            if(generateOnPropertyChanged)
+                classDeclaration = classDeclaration.AddMembers(GenerateChangedMethod(compilation, classSymbol, property));
         }
-        classDeclaration = classDeclaration
-            .AddMembers(GenerateOnPropertyChangedOverride(compilation, classSymbol, properties))
-            .WithLeadingTrivia(ParseLeadingTrivia($"/// <inheritdoc cref=\"{className}\"/>\r\n"));
+        if (generateOnPropertyChanged)
+            classDeclaration = classDeclaration.AddMembers(GenerateOnPropertyChangedOverride(compilation, classSymbol, properties));
+        classDeclaration = classDeclaration.WithLeadingTrivia(ParseLeadingTrivia($"/// <inheritdoc cref=\"{className}\"/>\r\n"));
         var namespaceDeclarationSyntax = NamespaceDeclaration(ParseName(namespaceName)).AddMembers(classDeclaration);
         return namespaceDeclarationSyntax;
     }
@@ -103,10 +106,8 @@ public class StyledPropertyGenerator : IIncrementalGenerator
             .ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
         var avaloniaPropertySymbolName = compilation.GetTypeByMetadataName("Avalonia.AvaloniaProperty")!
             .ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
-        var attribute = propertySymbol.GetAttributes().FirstOrDefault(p
-            =>
-                p.AttributeClass!.ToDisplayString() == AttributeFullName
-        )!;     
+        var attribute = propertySymbol.GetAttributes().FirstOrDefault(p =>p.AttributeClass!.ToDisplayString() == AttributeFullName)!;
+
         var defaultValue = GetDefaultValue(
             attribute,
             propertySymbol,
