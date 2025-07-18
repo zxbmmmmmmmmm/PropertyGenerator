@@ -140,7 +140,7 @@ public class StyledPropertyGenerator : IIncrementalGenerator
             arguments.Add(Argument(IdentifierName(validate.Value!.ToString()))
                 .WithNameColon(NameColon(IdentifierName("validate"))));
         }
-
+        
         if (attribute.TryGetNamedArgument("Coerce", out TypedConstant coerce))
         {
             arguments.Add(Argument(IdentifierName(coerce.Value!.ToString()))
@@ -459,9 +459,13 @@ public class StyledPropertyGenerator : IIncrementalGenerator
         }
 
         token.ThrowIfCancellationRequested();
-
+        var hasDefaultValue = attributeData.TryGetConstructorArgument(0, out TypedConstant defaultValue);
+        if (!hasDefaultValue)
+        {
+            hasDefaultValue = attributeData.TryGetNamedArgument("DefaultValue", out defaultValue);
+        }
         // Next, check whether the default value is explicitly set or not
-        if (attributeData.TryGetNamedArgument("DefaultValue", out TypedConstant defaultValue))
+        if (hasDefaultValue)
         {
             // If the explicit value is anything other than 'null', we can return it directly
             if (!defaultValue.IsNull)

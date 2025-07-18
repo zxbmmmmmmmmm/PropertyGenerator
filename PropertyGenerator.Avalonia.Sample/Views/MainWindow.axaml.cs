@@ -21,7 +21,7 @@ public partial class MainWindow : Window
     /// <summary>
     /// AAA
     /// </summary>
-    [GeneratedStyledProperty]
+    [GeneratedStyledProperty(114514)]
     public partial int Count { get; set; }
 
     /// <summary>
