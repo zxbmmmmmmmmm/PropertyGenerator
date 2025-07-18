@@ -414,7 +414,7 @@ public class StyledPropertyGenerator : IIncrementalGenerator
                     Literal("PropertyGenerator.Avalonia.Generator"))),
                 AttributeArgument(LiteralExpression(
                     SyntaxKind.StringLiteralExpression,
-                    Literal("1.0.0.0"))));
+                    Literal("1.0.1.0"))));
     }
 
     private static AvaloniaPropertyDefaultValue GetDefaultValue(
