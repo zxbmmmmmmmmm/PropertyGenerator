@@ -78,8 +78,8 @@ By default, the generator will override`OnPropertyChanged` at the same time:
 ```csharp
 partial void OnCountPropertyChanged(int newValue);
 partial void OnCountPropertyChanged(int oldValue, int newValue);
-partial void OnCountPropertyChanged(global::Avalonia.AvaloniaPropertyChangedEventArgs e);
-protected override void OnPropertyChanged(global::Avalonia.AvaloniaPropertyChangedEventArgs change)
+partial void OnCountPropertyChanged(AvaloniaPropertyChangedEventArgs e);
+protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
 {
     base.OnPropertyChanged(change);
     switch (change.Property.Name)
