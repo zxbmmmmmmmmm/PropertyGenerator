@@ -26,7 +26,7 @@ public partial int Count { get; set; }
 Generated code:
 
 ```csharp
-Avalonia.StyledProperty<int> CountProperty = AvaloniaProperty.Register<MainWindow, int>(name: nameof(Count), defaultValue: 114514);
+Avalonia.StyledProperty<int> CountProperty = AvaloniaProperty.Register<MainWindow, int>(name: nameof(Count), defaultValue: 10);
 public partial int Count { get => GetValue(CountProperty); set => SetValue(CountProperty, value); }
 ```
 
