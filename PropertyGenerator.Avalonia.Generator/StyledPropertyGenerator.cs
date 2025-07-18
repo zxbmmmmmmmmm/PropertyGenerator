@@ -115,6 +115,8 @@ public class StyledPropertyGenerator : IIncrementalGenerator
             model,
             CancellationToken.None);
 
+        
+
         List<ArgumentSyntax> arguments =
         [
             Argument(NameOfExpression(propertyName))
@@ -177,6 +179,7 @@ public class StyledPropertyGenerator : IIncrementalGenerator
                                         IdentifierName(className),
                                         ParseTypeName(propertyType))))
                             .AddArgumentListArguments([..arguments]))))))
+            .AddModifiers([..GetAccessibilityModifiers(propertySymbol.DeclaredAccessibility),Token(SyntaxKind.StaticKeyword),Token(SyntaxKind.ReadOnlyKeyword)])
             .AddAttributeLists(
                 AttributeList(
                     SingletonSeparatedList(GeneratedCodeAttribute())))
@@ -191,7 +194,7 @@ public class StyledPropertyGenerator : IIncrementalGenerator
 
         var propertyDeclaration =
             PropertyDeclaration(ParseTypeName(propertyType), Identifier(propertyName))
-                .AddModifiers(Token(SyntaxKind.PublicKeyword), Token(SyntaxKind.PartialKeyword))
+                .AddModifiers([..GetAccessibilityModifiers(propertySymbol.DeclaredAccessibility),Token(SyntaxKind.PartialKeyword)])
                 .AddAccessorListAccessors(
                     AccessorDeclaration(SyntaxKind.GetAccessorDeclaration)
                         .WithExpressionBody(ArrowExpressionClause(InvocationExpression(IdentifierName("GetValue"))
@@ -595,7 +598,21 @@ public class StyledPropertyGenerator : IIncrementalGenerator
         }
         return false;
     }
-    
+
+    private static SyntaxToken[] GetAccessibilityModifiers(Accessibility accessibility)
+    {
+        return accessibility switch
+        {
+            Accessibility.Public => [Token(SyntaxKind.PublicKeyword)],
+            Accessibility.Protected => [Token(SyntaxKind.ProtectedKeyword)],
+            Accessibility.Internal => [Token(SyntaxKind.InternalKeyword)],
+            Accessibility.ProtectedOrInternal => [Token(SyntaxKind.PrivateKeyword), Token(SyntaxKind.ProtectedKeyword)],
+            Accessibility.ProtectedAndInternal => [Token(SyntaxKind.ProtectedKeyword), Token(SyntaxKind.InternalKeyword)],
+            Accessibility.Private => [Token(SyntaxKind.PrivateKeyword)],
+            _ => [],
+        };
+    }
+
     /// <summary>
     /// Generate the following code
     /// <code>

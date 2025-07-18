@@ -5,7 +5,6 @@ using Avalonia.Data;
 using PropertyGenerator.Avalonia;
 
 namespace PropertyGenerator.Avalonia.Sample.Views;
-
 [DoNotGenerateOnPropertyChanged]
 public partial class MainWindow : Window
 {
@@ -22,7 +21,7 @@ public partial class MainWindow : Window
     /// AAA
     /// </summary>
     [GeneratedStyledProperty(114514)]
-    public partial int Count { get; set; }
+    internal partial int Count { get; set; }
 
     /// <summary>
     /// AAA
