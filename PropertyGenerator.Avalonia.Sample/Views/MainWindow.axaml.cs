@@ -11,15 +11,22 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
-        IsRunningProperty.Changed.AddClassHandler<MainWindow>((s,e) =>
+        CountProperty.Changed.AddClassHandler<MainWindow>((s,e) =>
         {
         });
     }
 
     [GeneratedStyledProperty]
-    public partial bool? IsRunning { get; set; }
+    public partial int Count { get; set; }
 
-    [GeneratedStyledProperty(DefaultValueCallback = nameof(DefaultValueCallback),DefaultValue = true, Validate = nameof(Validate),Coerce = nameof(Coerce),EnableDataValidation = true,Inherits = true, DefaultBindingMode = BindingMode.TwoWay)]
+    [GeneratedStyledProperty(
+        DefaultValueCallback = nameof(DefaultValueCallback),
+        DefaultValue = true,
+        Validate = nameof(Validate),
+        Coerce = nameof(Coerce),
+        EnableDataValidation = true,
+        Inherits = true,
+        DefaultBindingMode = BindingMode.TwoWay)]
     public partial bool? IsStarted { get; set; }
     private static bool DefaultValueCallback()
     {

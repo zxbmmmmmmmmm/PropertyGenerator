@@ -247,7 +247,7 @@ public class StyledPropertyGenerator : IIncrementalGenerator
                                         InvocationExpression(
                                             IdentifierName($"On{propertyName}PropertyChanged"))
                                         .AddArgumentListArguments(Argument(
-                                            CastExpression(ParseTypeName(propertyType),
+                                            CastExpression(IdentifierName(propertyType),
                                                 MemberAccessExpression(
                                                     SyntaxKind.SimpleMemberAccessExpression,
                                                     IdentifierName("change"),
@@ -258,16 +258,14 @@ public class StyledPropertyGenerator : IIncrementalGenerator
                                         .AddArgumentListArguments(
                                                         Argument(
                                                             CastExpression(
-                                                                ParseTypeName(propertyType),
+                                                                IdentifierName(propertyType),
                                                                 MemberAccessExpression(
                                                                     SyntaxKind.SimpleMemberAccessExpression,
                                                                     IdentifierName("change"),
                                                                     IdentifierName("OldValue")))),
                                                         Argument(
                                                             CastExpression(
-                                                                NullableType(
-                                                                    PredefinedType(
-                                                                        Token(SyntaxKind.BoolKeyword))),
+                                                                IdentifierName(propertyType),
                                                                 MemberAccessExpression(
                                                                     SyntaxKind.SimpleMemberAccessExpression,
                                                                     IdentifierName("change"),
