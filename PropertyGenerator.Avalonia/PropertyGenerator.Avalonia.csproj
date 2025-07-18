@@ -5,6 +5,10 @@
         <LangVersion>preview</LangVersion>
         <Nullable>enable</Nullable>
         <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
+        <Title>PropertyGenerator.Avalonia</Title>
+        <Authors>Betta_Fish</Authors>
+        <PackageTags>Avalonia;StyledProperty;AvaloniaProperty;Generator</PackageTags>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
     </PropertyGroup>
 
     <ItemGroup>
