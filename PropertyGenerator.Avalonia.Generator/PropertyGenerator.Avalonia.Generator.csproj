@@ -12,6 +12,12 @@
     </PropertyGroup>
 
     <ItemGroup>
+      <Compile Remove="Generated\**" />
+      <EmbeddedResource Remove="Generated\**" />
+      <None Remove="Generated\**" />
+    </ItemGroup>
+
+    <ItemGroup>
         <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="4.14.0">
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
