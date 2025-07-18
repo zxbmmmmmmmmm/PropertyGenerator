@@ -71,3 +71,33 @@ StyledProperty<bool?> IsStartedProperty = AvaloniaProperty.Register<MainWindow, 
 public partial bool? IsStarted { get => GetValue(IsStartedProperty); set => SetValue(IsStartedProperty, value); }
 ```
 
+***
+
+By default, the generator will override`OnPropertyChanged` at the same time:
+
+```csharp
+partial void OnCountPropertyChanged(int newValue);
+partial void OnCountPropertyChanged(int oldValue, int newValue);
+partial void OnCountPropertyChanged(global::Avalonia.AvaloniaPropertyChangedEventArgs e);
+protected override void OnPropertyChanged(global::Avalonia.AvaloniaPropertyChangedEventArgs change)
+{
+    base.OnPropertyChanged(change);
+    switch (change.Property.Name)
+    {
+        case nameof(Count):
+            OnCountPropertyChanged(change);
+            OnCountPropertyChanged((int)change.NewValue);
+            OnCountPropertyChanged((int)change.OldValue, (int)change.NewValue);
+            break;
+    }
+}
+```
+
+To disable this feature, please add `DoNotGenerateOnPropertyChangedAttribute`
+
+```csharp
+[DoNotGenerateOnPropertyChanged]
+public partial class MainWindow : Window
+{ ... }
+```
+
