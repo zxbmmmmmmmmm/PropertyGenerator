@@ -1,8 +1,8 @@
-﻿using System;
+using System;
 
 namespace PropertyGenerator.Avalonia;
 
-[AttributeUsage(AttributeTargets.Class, Inherited = false, AllowMultiple = false)]
+[AttributeUsage(AttributeTargets.Class | AttributeTargets.Assembly, Inherited = false, AllowMultiple = false)]
 public sealed class DoNotGenerateOnPropertyChangedAttribute : Attribute
 {
     

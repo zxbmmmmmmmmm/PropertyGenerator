@@ -94,7 +94,8 @@ public class StyledPropertyGenerator : IIncrementalGenerator
         var namespaceName = classSymbol.ContainingNamespace.ToDisplayString();
         var className = classSymbol.Name;
         var doNotGenerateOnPropertyChangedAttributeSymbols = compilation.GetTypesByMetadataName("PropertyGenerator.Avalonia.DoNotGenerateOnPropertyChangedAttribute");
-        var generateOnPropertyChanged = !classSymbol.HasAttributeWithAnyType(doNotGenerateOnPropertyChangedAttributeSymbols);
+        var generateOnPropertyChanged = !classSymbol.HasAttributeWithAnyType(doNotGenerateOnPropertyChangedAttributeSymbols)
+            && !compilation.Assembly.HasAttributeWithAnyType(doNotGenerateOnPropertyChangedAttributeSymbols);
 
         var classDeclaration = ClassDeclaration(className).AddModifiers(Token(SyntaxKind.PartialKeyword));
         foreach (var (property, model) in properties)

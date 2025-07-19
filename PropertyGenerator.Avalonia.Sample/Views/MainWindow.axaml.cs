@@ -3,7 +3,6 @@ using Avalonia.Controls;
 using Avalonia.Data;
 
 namespace PropertyGenerator.Avalonia.Sample.Views;
-[DoNotGenerateOnPropertyChanged]
 public partial class MainWindow : Window
 {
     public MainWindow()
