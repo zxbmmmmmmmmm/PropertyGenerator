@@ -238,8 +238,7 @@ public class StyledPropertyGenerator : IIncrementalGenerator
             propertyDeclaration = propertyDeclaration.AddAccessorListAccessors(accessorDeclarationSyntax);
         }
         //.WithLeadingTrivia(ParseLeadingTrivia($"/// <inheritdoc cref=\"{propertyName}\"/>\r\n"));
-
-            return propertyDeclaration;
+        return propertyDeclaration;
     }
 
     private static MethodDeclarationSyntax GenerateOnPropertyChangedOverride(ICollection<PropertyTuple> properties)

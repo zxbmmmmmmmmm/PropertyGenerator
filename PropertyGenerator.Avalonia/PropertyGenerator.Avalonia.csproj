@@ -7,12 +7,13 @@
         <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
         <Title>PropertyGenerator.Avalonia</Title>
         <Authors>Betta_Fish</Authors>
-        <PackageTags>Avalonia;StyledProperty;AvaloniaProperty;Generator</PackageTags>
+        <PackageTags>Avalonia;Generator;StyledProperty;AvaloniaProperty</PackageTags>
         <PackageLicenseExpression>MIT</PackageLicenseExpression>
         <Description>Auto generate StyledProperty for Avalonia applications</Description>
         <PackageProjectUrl>https://github.com/zxbmmmmmmmmm/PropertyGenerator</PackageProjectUrl>
         <PackageReadmeFile>readme.md</PackageReadmeFile>
-        <VersionPrefix>1.0.1</VersionPrefix>
+        <VersionPrefix>1.0.2</VersionPrefix>
+        <RepositoryUrl>https://github.com/zxbmmmmmmmmm/PropertyGenerator</RepositoryUrl>
     </PropertyGroup>
 
     <ItemGroup>
