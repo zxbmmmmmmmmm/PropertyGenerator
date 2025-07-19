@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Runtime.CompilerServices;
 using System.Threading;
 
@@ -67,7 +67,7 @@ internal sealed class ObjectPool<T>(Func<T> factory, int size)
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public T Allocate()
     {
-        T? item = this.firstItem;
+        var item = this.firstItem;
 
         if (item is null || item != Interlocked.CompareExchange(ref this.firstItem, null, item))
         {
@@ -101,9 +101,9 @@ internal sealed class ObjectPool<T>(Func<T> factory, int size)
     [MethodImpl(MethodImplOptions.NoInlining)]
     private T AllocateSlow()
     {
-        foreach (ref Element element in this.items.AsSpan())
+        foreach (ref var element in this.items.AsSpan())
         {
-            T? instance = element.Value;
+            var instance = element.Value;
 
             if (instance is not null)
             {
@@ -124,7 +124,7 @@ internal sealed class ObjectPool<T>(Func<T> factory, int size)
     [MethodImpl(MethodImplOptions.NoInlining)]
     private void FreeSlow(T obj)
     {
-        foreach (ref Element element in this.items.AsSpan())
+        foreach (ref var element in this.items.AsSpan())
         {
             if (element.Value is null)
             {

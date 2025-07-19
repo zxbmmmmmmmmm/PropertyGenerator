@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Immutable;
@@ -109,7 +109,7 @@ internal struct ImmutableArrayBuilder<T> : IDisposable
     /// <inheritdoc cref="ImmutableArray{T}.Builder.ToImmutable"/>
     public readonly ImmutableArray<T> ToImmutable()
     {
-        T[] array = this.writer!.WrittenSpan.ToArray();
+        var array = this.writer!.WrittenSpan.ToArray();
 
         return ImmutableCollectionsMarshal.AsImmutableArray(array);
     }
@@ -129,7 +129,7 @@ internal struct ImmutableArrayBuilder<T> : IDisposable
     /// <inheritdoc/>
     public void Dispose()
     {
-        Writer? writer = this.writer;
+        var writer = this.writer;
 
         this.writer = null;
 
@@ -201,7 +201,7 @@ internal struct ImmutableArrayBuilder<T> : IDisposable
         {
             EnsureCapacity(requestedSize);
 
-            Span<T> span = this.array.AsSpan(this.index, requestedSize);
+            var span = this.array.AsSpan(this.index, requestedSize);
 
             this.index += requestedSize;
 
@@ -286,10 +286,10 @@ internal struct ImmutableArrayBuilder<T> : IDisposable
         [MethodImpl(MethodImplOptions.NoInlining)]
         private void ResizeBuffer(int sizeHint)
         {
-            int minimumSize = this.index + sizeHint;
-            int requestedSize = Math.Max(this.array.Length * 2, minimumSize);
+            var minimumSize = this.index + sizeHint;
+            var requestedSize = Math.Max(this.array.Length * 2, minimumSize);
 
-            T[] newArray = new T[requestedSize];
+            var newArray = new T[requestedSize];
 
             Array.Copy(this.array, newArray, this.index);
 
@@ -330,9 +330,9 @@ internal struct ImmutableArrayBuilder<T> : IDisposable
         IEnumerator<T> IEnumerable<T>.GetEnumerator()
         {
             T?[] array = this.array!;
-            int length = this.index;
+            var length = this.index;
 
-            for (int i = 0; i < length; i++)
+            for (var i = 0; i < length; i++)
             {
                 yield return array[i]!;
             }

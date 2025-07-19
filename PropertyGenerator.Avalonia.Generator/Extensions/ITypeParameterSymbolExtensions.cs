@@ -1,4 +1,4 @@
-﻿using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis;
 
 namespace PropertyGenerator.Avalonia.Generator.Extensions;
 
@@ -26,7 +26,7 @@ internal static class ITypeParameterSymbolExtensions
             return false;
         }
 
-        foreach (ITypeSymbol constraintType in symbol.ConstraintTypes)
+        foreach (var constraintType in symbol.ConstraintTypes)
         {
             // Recurse on the type parameter first (e. g. we might indirectly be getting a 'class' constraint)
             if (constraintType is ITypeParameterSymbol typeParameter &&

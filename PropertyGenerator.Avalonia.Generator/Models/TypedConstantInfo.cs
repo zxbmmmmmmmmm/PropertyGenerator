@@ -1,4 +1,4 @@
-﻿// Licensed to the .NET Foundation under one or more agreements.
+// Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
@@ -48,7 +48,7 @@ internal abstract partial record TypedConstantInfo
         /// <inheritdoc/>
         public override string ToString()
         {
-            ArrayCreationExpressionSyntax arrayCreationExpressionSyntax =
+            var arrayCreationExpressionSyntax =
                 ArrayCreationExpression(
                 ArrayType(IdentifierName(ElementTypeName))
                 .AddRankSpecifiers(ArrayRankSpecifier(SingletonSeparatedList<ExpressionSyntax>(OmittedArraySizeExpression()))))
@@ -114,7 +114,7 @@ internal abstract partial record TypedConstantInfo
                 static ExpressionSyntax GetExpression(T value)
                 {
                     // Try to match named constants first
-                    if (TryGetConstantExpression(value, out ExpressionSyntax? expression))
+                    if (TryGetConstantExpression(value, out var expression))
                     {
                         return expression;
                     }
@@ -136,12 +136,12 @@ internal abstract partial record TypedConstantInfo
                             return LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal("0.0", 0.0));
                         }
 
-                        string rawLiteral = d.ToString("R", CultureInfo.InvariantCulture);
+                        var rawLiteral = d.ToString("R", CultureInfo.InvariantCulture);
 
                         // For doubles, we need to manually format it and always add the trailing "D" suffix.
                         // This ensures that the correct type is produced if the expression was assigned to
                         // an object (eg. the literal was used in an attribute object parameter/property).
-                        string literal = rawLiteral.Contains(".") ? rawLiteral : $"{rawLiteral}.0";
+                        var literal = rawLiteral.Contains(".") ? rawLiteral : $"{rawLiteral}.0";
 
                         return LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(literal, d));
                     }
@@ -163,11 +163,11 @@ internal abstract partial record TypedConstantInfo
                             return LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal("0.0F", 0.0f));
                         }
 
-                        string rawLiteral = f.ToString("R", CultureInfo.InvariantCulture);
+                        var rawLiteral = f.ToString("R", CultureInfo.InvariantCulture);
 
                         // For floats, Roslyn will automatically add the "F" suffix, so no extra work is needed.
                         // However, we still format it manually to ensure we consistently add ".0" as suffix.
-                        string literal = rawLiteral.Contains(".") ? $"{rawLiteral}F" : $"{rawLiteral}.0F";
+                        var literal = rawLiteral.Contains(".") ? $"{rawLiteral}F" : $"{rawLiteral}.0F";
 
                         return LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(literal, f));
                     }
@@ -200,9 +200,9 @@ internal abstract partial record TypedConstantInfo
             /// <exception cref="ArgumentException">Thrown if <paramref name="value"/> is not of a supported type.</exception>
             private static bool TryGetConstantExpression(T value, [NotNullWhen(true)] out ExpressionSyntax? expression)
             {
-                if (ConstantFields.TryGetValue(value, out string? name))
+                if (ConstantFields.TryGetValue(value, out var name))
                 {
-                    SyntaxKind syntaxKind = value switch
+                    var syntaxKind = value switch
                     {
                         byte => SyntaxKind.ByteKeyword,
                         char => SyntaxKind.CharKeyword,
@@ -290,7 +290,7 @@ internal abstract partial record TypedConstantInfo
         {
             // We let Roslyn parse the value expression, so that it can automatically handle both positive and negative values. This
             // is needed because negative values have a different syntax tree (UnaryMinusExpression holding the numeric expression).
-            ExpressionSyntax valueExpression = ParseExpression(Value.ToString());
+            var valueExpression = ParseExpression(Value.ToString());
 
             // If the value is negative, we have to put parentheses around them (to avoid CS0075 errors)
             if (valueExpression is PrefixUnaryExpressionSyntax unaryExpression && unaryExpression.IsKind(SyntaxKind.UnaryMinusExpression))

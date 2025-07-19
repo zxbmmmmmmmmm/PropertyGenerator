@@ -47,7 +47,7 @@ internal static class AttributeDataExtensions
         // If we can recover the syntax node, look for the target named argument
         if (syntaxReference.GetSyntax(token) is AttributeSyntax { ArgumentList: { } argumentList })
         {
-            foreach (AttributeArgumentSyntax argument in argumentList.Arguments)
+            foreach (var argument in argumentList.Arguments)
             {
                 if (argument.NameEquals?.Name.Identifier.Text == name)
                 {
@@ -125,7 +125,7 @@ internal static class AttributeDataExtensions
     /// <returns>Whether or not <paramref name="attributeData"/> contains an argument named <paramref name="name"/> with a valid value.</returns>
     public static bool TryGetNamedArgument<T>(this AttributeData attributeData, string name, out T? value)
     {
-        if (TryGetNamedArgument(attributeData, name, out TypedConstant constantValue))
+        if (TryGetNamedArgument(attributeData, name, out var constantValue))
         {
             value = (T?)constantValue.Value;
 
@@ -146,7 +146,7 @@ internal static class AttributeDataExtensions
     /// <returns>Whether or not <paramref name="attributeData"/> contains an argument named <paramref name="name"/> with a valid value.</returns>
     public static bool TryGetNamedArgument(this AttributeData attributeData, string name, out TypedConstant value)
     {
-        foreach (KeyValuePair<string, TypedConstant> argument in attributeData.NamedArguments)
+        foreach (var argument in attributeData.NamedArguments)
         {
             if (argument.Key == name)
             {

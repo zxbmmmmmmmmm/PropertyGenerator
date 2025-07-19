@@ -1,19 +1,19 @@
-﻿using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Operations;
 using Microsoft.CodeAnalysis.Text;
 using PropertyGenerator.Avalonia.Generator.Extensions;
 using PropertyGenerator.Avalonia.Generator.Models;
-using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
 using System.Threading;
+using PropertyGenerator.Avalonia.Generator.Helpers;
 using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
+using PropertyTuple = (Microsoft.CodeAnalysis.IPropertySymbol PropertySymbol, Microsoft.CodeAnalysis.SemanticModel SemanticModel);
 
 namespace PropertyGenerator.Avalonia.Generator;
 
@@ -24,12 +24,33 @@ public class StyledPropertyGenerator : IIncrementalGenerator
     
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
-        var propertySymbols = context.SyntaxProvider
-            .ForAttributeWithMetadataName(
+        var propertySymbols = context.ForAttributeWithMetadataNameAndOptions(
                 AttributeFullName,
-                predicate: (node, _) => node is PropertyDeclarationSyntax pds && pds.Modifiers.Any(SyntaxKind.PartialKeyword),
-                transform: (ctx, _) => ctx)
-            .Where(ctx => (ctx.TargetSymbol as IPropertySymbol) is not null)!;
+                predicate: (node, _) =>
+                {
+                    // Initial check that's identical to the analyzer
+                    if (!node.IsValidPropertyDeclaration())
+                    {
+                        return false;
+                    }
+
+                    // Make sure that all containing types are partial, otherwise declaring a partial property
+                    // would not be valid. We don't need to emit diagnostics here, the compiler will handle that.
+                    for (var parentNode = node.FirstAncestor<TypeDeclarationSyntax>();
+                         parentNode is not null;
+                         parentNode = parentNode.FirstAncestor<TypeDeclarationSyntax>())
+                    {
+                        if (!parentNode.Modifiers.Any(SyntaxKind.PartialKeyword))
+                        {
+                            return false;
+                        }
+                    }
+
+                    // Here we can also easily filter out ref-returning properties just using syntax
+                    return !((PropertyDeclarationSyntax) node).Type.IsKind(SyntaxKind.RefType);
+                },
+                transform: (ctx, _) => (PropertySymbol: (IPropertySymbol) ctx.TargetSymbol, ctx.SemanticModel))
+            .Where(ctx => ctx.PropertySymbol.ContainingType is not null);
 
         var compilationAndProperties = context.CompilationProvider.Combine(propertySymbols.Collect());
 
@@ -37,16 +58,11 @@ public class StyledPropertyGenerator : IIncrementalGenerator
         {
             var compilation = source.Left;
             var ctx = source.Right;
-            var properties = ctx.Select(p => p.TargetSymbol as IPropertySymbol)
-                .Where(p => p is not null)
-                .Cast<IPropertySymbol>()
-                .Where(p => p.ContainingType is not null)
-                .ToImmutableArray();
 
-            if (properties.IsDefaultOrEmpty) return;
-            var model = ctx.First().SemanticModel;
+            if (ctx.IsDefaultOrEmpty)
+                return;
 
-            foreach (var group in properties.GroupBy<IPropertySymbol, INamedTypeSymbol>(p => p.ContainingType, SymbolEqualityComparer.Default))
+            foreach (var group in ctx.GroupBy<PropertyTuple, INamedTypeSymbol?>(p => p.PropertySymbol.ContainingType, SymbolEqualityComparer.Default))
             {
                 var containingClass = group.Key;
                 if (containingClass is null || !InheritsFrom(containingClass, "Avalonia.StyledElement"))
@@ -54,27 +70,26 @@ public class StyledPropertyGenerator : IIncrementalGenerator
                     continue;
                 }
 
-                var sourceCode = GenerateClassSource(compilation, containingClass, group.ToList(),model);
+                var sourceCode = GenerateClassSource(compilation, containingClass, [.. group]);
                 spc.AddSource($"{containingClass.ContainingNamespace.ToDisplayString()}.{containingClass.Name}.g.cs", 
                     SourceText.From(sourceCode, Encoding.UTF8));
             }
         });
     }    
     
-    private static string GenerateClassSource(Compilation compilation, INamedTypeSymbol classSymbol, List<IPropertySymbol> properties, SemanticModel model)
+    private static string GenerateClassSource(Compilation compilation, INamedTypeSymbol classSymbol, ICollection<PropertyTuple> properties)
     {
         var complicationUnit = CompilationUnit()
-            .AddMembers(GenerateContent(compilation, classSymbol, properties, model))
+            .AddMembers(GenerateContent(compilation, classSymbol, properties))
             .WithLeadingTrivia(
                 ParseLeadingTrivia("// <auto-generated/>\r\n")
                 .Add(Trivia(NullableDirectiveTrivia(Token(SyntaxKind.EnableKeyword), true)))
                 .Add(Trivia(PragmaWarningDirectiveTrivia(Token(SyntaxKind.DisableKeyword), true))));
 
-
         return SyntaxTree(complicationUnit.NormalizeWhitespace()).ToString();
     }
 
-    private static NamespaceDeclarationSyntax GenerateContent(Compilation compilation, INamedTypeSymbol classSymbol, List<IPropertySymbol> properties, SemanticModel model)
+    private static NamespaceDeclarationSyntax GenerateContent(Compilation compilation, INamedTypeSymbol classSymbol, ICollection<PropertyTuple> properties)
     {
         var namespaceName = classSymbol.ContainingNamespace.ToDisplayString();
         var className = classSymbol.Name;
@@ -82,15 +97,15 @@ public class StyledPropertyGenerator : IIncrementalGenerator
         var generateOnPropertyChanged = !classSymbol.HasAttributeWithAnyType(doNotGenerateOnPropertyChangedAttributeSymbols);
 
         var classDeclaration = ClassDeclaration(className).AddModifiers(Token(SyntaxKind.PartialKeyword));
-        foreach (var property in properties)
+        foreach (var (property, model) in properties)
         {
             classDeclaration = classDeclaration.AddMembers(GenerateFieldDeclaration(compilation, classSymbol, property, model));
-            classDeclaration = classDeclaration.AddMembers(GeneratePropertyDeclaration(compilation, classSymbol, property));
+            classDeclaration = classDeclaration.AddMembers(GeneratePropertyDeclaration(property));
             if(generateOnPropertyChanged)
-                classDeclaration = classDeclaration.AddMembers(GenerateChangedMethod(compilation, classSymbol, property));
+                classDeclaration = classDeclaration.AddMembers(GenerateChangedMethod(property));
         }
         if (generateOnPropertyChanged)
-            classDeclaration = classDeclaration.AddMembers(GenerateOnPropertyChangedOverride(compilation, classSymbol, properties));
+            classDeclaration = classDeclaration.AddMembers(GenerateOnPropertyChangedOverride(properties));
         classDeclaration = classDeclaration.WithLeadingTrivia(ParseLeadingTrivia($"/// <inheritdoc cref=\"{className}\"/>\r\n"));
         var namespaceDeclarationSyntax = NamespaceDeclaration(ParseName(namespaceName)).AddMembers(classDeclaration);
         return namespaceDeclarationSyntax;
@@ -115,8 +130,6 @@ public class StyledPropertyGenerator : IIncrementalGenerator
             model,
             CancellationToken.None);
 
-        
-
         List<ArgumentSyntax> arguments =
         [
             Argument(NameOfExpression(propertyName))
@@ -137,39 +150,38 @@ public class StyledPropertyGenerator : IIncrementalGenerator
             }
         }
 
-        if (attribute.TryGetNamedArgument("Validate", out TypedConstant validate))
+        if (attribute.TryGetNamedArgument("Validate", out var validate))
         {
             arguments.Add(Argument(IdentifierName(validate.Value!.ToString()))
                 .WithNameColon(NameColon(IdentifierName("validate"))));
         }
         
-        if (attribute.TryGetNamedArgument("Coerce", out TypedConstant coerce))
+        if (attribute.TryGetNamedArgument("Coerce", out var coerce))
         {
             arguments.Add(Argument(IdentifierName(coerce.Value!.ToString()))
                 .WithNameColon(NameColon(IdentifierName("coerce"))));
         }
 
-        if (attribute.TryGetNamedArgument("EnableDataValidation", out TypedConstant enableDataValidation))
+        if (attribute.TryGetNamedArgument("EnableDataValidation", out var enableDataValidation))
         {
             arguments.Add(Argument(IdentifierName(enableDataValidation.Value!.ToString().ToLower()))
                 .WithNameColon(NameColon(IdentifierName("enableDataValidation"))));
         }
 
-        if (attribute.TryGetNamedArgument("Inherits", out TypedConstant inherits))
+        if (attribute.TryGetNamedArgument("Inherits", out var inherits))
         {
             arguments.Add(Argument(IdentifierName(inherits.Value!.ToString().ToLower()))
                 .WithNameColon(NameColon(IdentifierName("inherits"))));
         }
 
-        if (attribute.TryGetNamedArgument("DefaultBindingMode", out TypedConstant defaultBindingMode))
+        if (attribute.TryGetNamedArgument("DefaultBindingMode", out var defaultBindingMode))
         {          
             arguments.Add(Argument(IdentifierName(TypedConstantInfo.Create(defaultBindingMode).ToString()))
                 .WithNameColon(NameColon(IdentifierName("defaultBindingMode"))));
         }
 
         var fieldDeclaration = FieldDeclaration(
-                VariableDeclaration(
-                        IdentifierName(styledPropertySymbolName))
+                VariableDeclaration(IdentifierName(styledPropertySymbolName))
                     .WithVariables(SingletonSeparatedList(VariableDeclarator(Identifier($"{propertyName}Property"))
                         .WithInitializer(EqualsValueClause(InvocationExpression(MemberAccessExpression(
                                 SyntaxKind.SimpleMemberAccessExpression,
@@ -178,42 +190,60 @@ public class StyledPropertyGenerator : IIncrementalGenerator
                                     .AddTypeArgumentListArguments(
                                         IdentifierName(className),
                                         ParseTypeName(propertyType))))
-                            .AddArgumentListArguments([..arguments]))))))
-            .AddModifiers([..GetAccessibilityModifiers(propertySymbol.DeclaredAccessibility),Token(SyntaxKind.StaticKeyword),Token(SyntaxKind.ReadOnlyKeyword)])
-            .AddAttributeLists(
-                AttributeList(
-                    SingletonSeparatedList(GeneratedCodeAttribute())))
-            .WithLeadingTrivia(ParseLeadingTrivia($"/// <summary>\r\n/// The backing <see cref=\"global::Avalonia.StyledProperty{{TValue}}\"/> instance for <see cref=\"{propertyName}\"/>.\r\n/// </summary>\r\n"));
+                            .AddArgumentListArguments([.. arguments]))))))
+            .AddModifiers([
+                ..GetAccessibilityModifiers(propertySymbol.DeclaredAccessibility), Token(SyntaxKind.StaticKeyword),
+                Token(SyntaxKind.ReadOnlyKeyword)
+            ])
+            .AddAttributeLists(AttributeList(SingletonSeparatedList(GeneratedCodeAttribute())))
+            .WithLeadingTrivia(ParseLeadingTrivia(
+                $$"""
+                  /// <summary>
+                  /// The backing <see cref="global::Avalonia.StyledProperty{TValue}"/> instance for <see cref="{{propertyName}}"/>.
+                  /// </summary>
+
+                  """));
         return fieldDeclaration;
     }
 
-    private static PropertyDeclarationSyntax GeneratePropertyDeclaration(Compilation compilation, INamedTypeSymbol classSymbol, IPropertySymbol propertySymbol)
+    private static PropertyDeclarationSyntax GeneratePropertyDeclaration(IPropertySymbol propertySymbol)
     {
         var propertyName = propertySymbol.Name;
         var propertyType = propertySymbol.Type.ToDisplayString();
 
         var propertyDeclaration =
             PropertyDeclaration(ParseTypeName(propertyType), Identifier(propertyName))
-                .AddModifiers([..GetAccessibilityModifiers(propertySymbol.DeclaredAccessibility),Token(SyntaxKind.PartialKeyword)])
-                .AddAccessorListAccessors(
-                    AccessorDeclaration(SyntaxKind.GetAccessorDeclaration)
-                        .WithExpressionBody(ArrowExpressionClause(InvocationExpression(IdentifierName("GetValue"))
-                            .AddArgumentListArguments(Argument(IdentifierName($"{propertyName}Property")))))
-                        .WithSemicolonToken(Token(SyntaxKind.SemicolonToken)),
-                    AccessorDeclaration(SyntaxKind.SetAccessorDeclaration)
-                        .WithExpressionBody(ArrowExpressionClause(InvocationExpression(IdentifierName("SetValue"))
-                            .AddArgumentListArguments(
-                                Argument(IdentifierName($"{propertyName}Property")),
-                                Argument(IdentifierName("value")))))
-                        .WithSemicolonToken(Token(SyntaxKind.SemicolonToken)));
-                //.WithLeadingTrivia(ParseLeadingTrivia($"/// <inheritdoc cref=\"{propertyName}\"/>\r\n"));
+                .AddModifiers([..GetAccessibilityModifiers(propertySymbol.DeclaredAccessibility) ,Token(SyntaxKind.PartialKeyword)]);
+        if (propertySymbol.GetMethod is { } getMethod)
+        {
+            var accessorDeclarationSyntax = AccessorDeclaration(SyntaxKind.GetAccessorDeclaration)
+                .WithExpressionBody(ArrowExpressionClause(InvocationExpression(IdentifierName("GetValue"))
+                    .AddArgumentListArguments(Argument(IdentifierName($"{propertyName}Property")))))
+                .WithSemicolonToken(Token(SyntaxKind.SemicolonToken));
+            if (getMethod.DeclaredAccessibility != propertySymbol.DeclaredAccessibility) 
+                accessorDeclarationSyntax = accessorDeclarationSyntax.AddModifiers([.. GetAccessibilityModifiers(getMethod.DeclaredAccessibility)]);
+            propertyDeclaration = propertyDeclaration.AddAccessorListAccessors(accessorDeclarationSyntax);
+        }
 
-        return propertyDeclaration;
+        if (propertySymbol.SetMethod is { } setMethod)
+        {
+            var accessorDeclarationSyntax = AccessorDeclaration(SyntaxKind.SetAccessorDeclaration)
+                .WithExpressionBody(ArrowExpressionClause(InvocationExpression(IdentifierName("SetValue"))
+                    .AddArgumentListArguments(
+                        Argument(IdentifierName($"{propertyName}Property")),
+                        Argument(IdentifierName("value")))))
+                .WithSemicolonToken(Token(SyntaxKind.SemicolonToken));
+            if (setMethod.DeclaredAccessibility != propertySymbol.DeclaredAccessibility) 
+                accessorDeclarationSyntax = accessorDeclarationSyntax.AddModifiers([.. GetAccessibilityModifiers(setMethod.DeclaredAccessibility)]);
+            propertyDeclaration = propertyDeclaration.AddAccessorListAccessors(accessorDeclarationSyntax);
+        }
+        //.WithLeadingTrivia(ParseLeadingTrivia($"/// <inheritdoc cref=\"{propertyName}\"/>\r\n"));
+
+            return propertyDeclaration;
     }
 
-    private static MethodDeclarationSyntax GenerateOnPropertyChangedOverride(Compilation compilation, INamedTypeSymbol classSymbol, List<IPropertySymbol> properties)
+    private static MethodDeclarationSyntax GenerateOnPropertyChangedOverride(ICollection<PropertyTuple> properties)
     {
-
         var switchStatement =
             SwitchStatement(
                 MemberAccessExpression(
@@ -223,86 +253,58 @@ public class StyledPropertyGenerator : IIncrementalGenerator
                         IdentifierName("change"),
                         IdentifierName("Property")),
                     IdentifierName("Name")));
-        foreach (var property in properties)
+        foreach (var (property, _) in properties)
         {
             var propertyName = property.Name;
             var propertyType = property.Type.ToDisplayString();
 
             switchStatement = switchStatement
-                .AddSections(
-                        SwitchSection()
-                        .AddLabels(CaseSwitchLabel(
-                            InvocationExpression(
-                                    IdentifierName(
-                                        Identifier(
-                                            TriviaList(),
-                                            SyntaxKind.NameOfKeyword,
-                                            "nameof",
-                                            "nameof",
-                                            TriviaList())))
+                .AddSections(SwitchSection()
+                    .AddLabels(CaseSwitchLabel(NameOfExpression(propertyName)))
+                    .AddStatements(ExpressionStatement(
+                            InvocationExpression(IdentifierName($"On{propertyName}PropertyChanged"))
                                 .AddArgumentListArguments(
-                                    Argument(IdentifierName(propertyName)))))
-                        .AddStatements(
-                            ExpressionStatement(
-                                InvocationExpression(
-                                        IdentifierName($"On{propertyName}PropertyChanged"))
-                                    .AddArgumentListArguments(Argument(IdentifierName("change")))),
-                                    ExpressionStatement(
-                                        InvocationExpression(
-                                            IdentifierName($"On{propertyName}PropertyChanged"))
-                                        .AddArgumentListArguments(Argument(
-                                            CastExpression(IdentifierName(propertyType),
-                                                MemberAccessExpression(
-                                                    SyntaxKind.SimpleMemberAccessExpression,
-                                                    IdentifierName("change"),
-                                                    IdentifierName("NewValue")))))),
-                                    ExpressionStatement(
-                                        InvocationExpression(
-                                            IdentifierName($"On{propertyName}PropertyChanged"))
-                                        .AddArgumentListArguments(
-                                                        Argument(
-                                                            CastExpression(
-                                                                IdentifierName(propertyType),
-                                                                MemberAccessExpression(
-                                                                    SyntaxKind.SimpleMemberAccessExpression,
-                                                                    IdentifierName("change"),
-                                                                    IdentifierName("OldValue")))),
-                                                        Argument(
-                                                            CastExpression(
-                                                                IdentifierName(propertyType),
-                                                                MemberAccessExpression(
-                                                                    SyntaxKind.SimpleMemberAccessExpression,
-                                                                    IdentifierName("change"),
-                                                                    IdentifierName("NewValue")))))),
-                                    BreakStatement()));
+                                    Argument(IdentifierName("change")))),
+                        ExpressionStatement(InvocationExpression(IdentifierName($"On{propertyName}PropertyChanged"))
+                            .AddArgumentListArguments(Argument(
+                                CastExpression(
+                                    IdentifierName(propertyType),
+                                    MemberAccessExpression(
+                                        SyntaxKind.SimpleMemberAccessExpression,
+                                        IdentifierName("change"),
+                                        IdentifierName("NewValue")))))),
+                        ExpressionStatement(InvocationExpression(IdentifierName($"On{propertyName}PropertyChanged"))
+                            .AddArgumentListArguments(Argument(CastExpression(
+                                    IdentifierName(propertyType),
+                                    MemberAccessExpression(
+                                        SyntaxKind.SimpleMemberAccessExpression,
+                                        IdentifierName("change"),
+                                        IdentifierName("OldValue")))),
+                                Argument(CastExpression(
+                                    IdentifierName(propertyType),
+                                    MemberAccessExpression(
+                                        SyntaxKind.SimpleMemberAccessExpression,
+                                        IdentifierName("change"),
+                                        IdentifierName("NewValue")))))),
+                        BreakStatement()));
 
         }
-        var methodDeclaration = MethodDeclaration(
-                PredefinedType(
-                    Token(SyntaxKind.VoidKeyword)),
-                Identifier("OnPropertyChanged"))
-            .AddModifiers(Token(SyntaxKind.ProtectedKeyword),
-                Token(SyntaxKind.OverrideKeyword))
-            .AddParameterListParameters(
-                Parameter(Identifier("change"))
+
+        var methodDeclaration =
+            MethodDeclaration(PredefinedType(Token(SyntaxKind.VoidKeyword)), Identifier("OnPropertyChanged"))
+                .AddModifiers(Token(SyntaxKind.ProtectedKeyword), Token(SyntaxKind.OverrideKeyword))
+                .AddParameterListParameters(Parameter(Identifier("change"))
                     .WithType(IdentifierName("global::Avalonia.AvaloniaPropertyChangedEventArgs")))
-            .WithBody(
-                Block(
-                    ExpressionStatement(
-                        InvocationExpression(
-                                MemberAccessExpression(
-                                    SyntaxKind.SimpleMemberAccessExpression,
-                                    BaseExpression(),
-                                    IdentifierName("OnPropertyChanged")))
-                            .AddArgumentListArguments(
-                                Argument(
-                                    IdentifierName("change")))),
-                    switchStatement
-                ));
+                .WithBody(Block(ExpressionStatement(InvocationExpression(MemberAccessExpression(
+                            SyntaxKind.SimpleMemberAccessExpression,
+                            BaseExpression(),
+                            IdentifierName("OnPropertyChanged")))
+                        .AddArgumentListArguments(Argument(IdentifierName("change")))),
+                    switchStatement));
         return methodDeclaration;
     }
 
-    private static MemberDeclarationSyntax[] GenerateChangedMethod(Compilation compilation, INamedTypeSymbol classSymbol, IPropertySymbol propertySymbol)
+    private static MemberDeclarationSyntax[] GenerateChangedMethod(IPropertySymbol propertySymbol)
     {
         var propertyName = propertySymbol.Name;
 
@@ -317,68 +319,56 @@ public class StyledPropertyGenerator : IIncrementalGenerator
                 AttributeList(
                     SingletonSeparatedList(GeneratedCodeAttribute())));
 
-        var methodDeclarationWithOldValue = MethodDeclaration(PredefinedType(Token(SyntaxKind.VoidKeyword)), Identifier($"On{propertyName}PropertyChanged"))
+        var methodDeclarationWithOldValue = MethodDeclaration(PredefinedType(Token(SyntaxKind.VoidKeyword)),
+                Identifier($"On{propertyName}PropertyChanged"))
             .AddModifiers(Token(SyntaxKind.PartialKeyword))
-            .AddParameterListParameters(
-                Parameter(Identifier("oldValue"))
-                    .WithType(IdentifierName(propertySymbol.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat))),
+            .AddParameterListParameters(Parameter(Identifier("oldValue"))
+                    .WithType(IdentifierName(
+                        propertySymbol.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat))),
                 Parameter(Identifier("newValue"))
-                    .WithType(IdentifierName(propertySymbol.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat))))
+                    .WithType(IdentifierName(
+                        propertySymbol.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat))))
             .WithSemicolonToken(Token(SyntaxKind.SemicolonToken))
-            .AddAttributeLists(
-                AttributeList(
-                    SingletonSeparatedList(GeneratedCodeAttribute())));
+            .AddAttributeLists(AttributeList(SingletonSeparatedList(GeneratedCodeAttribute())));
 
         var methodDeclarationWithArgs = MethodDeclaration(PredefinedType(Token(SyntaxKind.VoidKeyword)), Identifier($"On{propertyName}PropertyChanged"))
             .AddModifiers(Token(SyntaxKind.PartialKeyword))
-            .AddParameterListParameters(
-                Parameter(Identifier("e"))
-                    .WithType(IdentifierName("global::Avalonia.AvaloniaPropertyChangedEventArgs")))
+            .AddParameterListParameters(Parameter(Identifier("e"))
+                .WithType(IdentifierName("global::Avalonia.AvaloniaPropertyChangedEventArgs")))
             .WithSemicolonToken(Token(SyntaxKind.SemicolonToken))
-            .AddAttributeLists(
-                AttributeList(
-                    SingletonSeparatedList(GeneratedCodeAttribute())));
+            .AddAttributeLists(AttributeList(SingletonSeparatedList(GeneratedCodeAttribute())));
         return [methodDeclaration,methodDeclarationWithOldValue, methodDeclarationWithArgs];
     }
 
-
-    private static MethodDeclarationSyntax GenerateGetMethod(Compilation compilation, INamedTypeSymbol classSymbol, IPropertySymbol propertySymbol)
+    private static MethodDeclarationSyntax GenerateGetMethod(IPropertySymbol propertySymbol)
     {
         var propertyName = propertySymbol.Name;
 
         var onGet = MethodDeclaration(PredefinedType(Token(SyntaxKind.VoidKeyword)), Identifier($"On{propertyName}Get"))
             .AddModifiers(Token(SyntaxKind.PartialKeyword))
-            .AddParameterListParameters(
-                Parameter(Identifier("propertyValue"))
-                    .WithModifiers(TokenList(Token(SyntaxKind.RefKeyword)))
-                    .WithType(IdentifierName(propertySymbol.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat))))
-            .WithSemicolonToken(
-                Token(SyntaxKind.SemicolonToken))
-            .AddAttributeLists(
-                AttributeList(
-                    SingletonSeparatedList(GeneratedCodeAttribute())));
+            .AddParameterListParameters(Parameter(Identifier("propertyValue"))
+                .WithModifiers(TokenList(Token(SyntaxKind.RefKeyword)))
+                .WithType(IdentifierName(propertySymbol.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat))))
+            .WithSemicolonToken(Token(SyntaxKind.SemicolonToken))
+            .AddAttributeLists(AttributeList(SingletonSeparatedList(GeneratedCodeAttribute())));
         return onGet;
     }
 
-    private static MethodDeclarationSyntax GenerateSetMethod(Compilation compilation, INamedTypeSymbol classSymbol, IPropertySymbol propertySymbol)
+    private static MethodDeclarationSyntax GenerateSetMethod(IPropertySymbol propertySymbol)
     {
         var propertyName = propertySymbol.Name;
 
         var onSet = MethodDeclaration(PredefinedType(Token(SyntaxKind.VoidKeyword)), Identifier($"On{propertyName}Set"))
             .AddModifiers(Token(SyntaxKind.PartialKeyword))
-            .AddParameterListParameters(
-                Parameter(Identifier("propertyValue"))
-                    .WithModifiers(TokenList(Token(SyntaxKind.RefKeyword)))
-                    .WithType(IdentifierName(propertySymbol.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat))))
-            .WithSemicolonToken(
-                Token(SyntaxKind.SemicolonToken))
-            .AddAttributeLists(
-                AttributeList(
-                    SingletonSeparatedList(GeneratedCodeAttribute())));
+            .AddParameterListParameters(Parameter(Identifier("propertyValue"))
+                .WithModifiers(TokenList(Token(SyntaxKind.RefKeyword)))
+                .WithType(IdentifierName(propertySymbol.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat))))
+            .WithSemicolonToken(Token(SyntaxKind.SemicolonToken))
+            .AddAttributeLists(AttributeList(SingletonSeparatedList(GeneratedCodeAttribute())));
         return onSet;
     }
 
-    private static NamespaceDeclarationSyntax GeneratePropertyChangedCallbacks(Compilation compilation, INamedTypeSymbol classSymbol, List<IPropertySymbol> properties)
+    private static NamespaceDeclarationSyntax GeneratePropertyChangedCallbacks(List<IPropertySymbol> properties)
     {
 
         var callbacksClassDeclaration = ClassDeclaration("PropertyChangedCallbacks").AddModifiers(Token(SyntaxKind.FileKeyword), Token(SyntaxKind.SealedKeyword));
@@ -396,7 +386,6 @@ public class StyledPropertyGenerator : IIncrementalGenerator
                 .AddMembers(GeneratePropertyChangedMethod(property));
         }
 
-
         var namespaceDeclarationSyntax = NamespaceDeclaration(IdentifierName("PropertyGenerator.Avalonia.Generator"))
             .AddUsings(UsingDirective(IdentifierName("global::System.Runtime.CompilerServices")))
             .AddUsings(UsingDirective(IdentifierName("global::Avalonia")))
@@ -409,23 +398,18 @@ public class StyledPropertyGenerator : IIncrementalGenerator
         var propertyName = propertySymbol.Name;
         var methodDeclaration = MethodDeclaration(IdentifierName("PropertyChangedCallback"), Identifier(propertyName))
             .AddModifiers(Token(SyntaxKind.PrivateKeyword), Token(SyntaxKind.StaticKeyword), Token(SyntaxKind.ReadOnlyKeyword))
-            .AddBodyStatements(
-            ReturnStatement(
-                ImplicitObjectCreationExpression()
-                .AddArgumentListArguments(
-                    Argument(
-                        MemberAccessExpression(
-                            SyntaxKind.SimpleMemberAccessExpression,
-                            IdentifierName("Instance"),
-                            IdentifierName($"On{propertyName}PropertyChanged"))))));
+            .AddBodyStatements(ReturnStatement(ImplicitObjectCreationExpression()
+                .AddArgumentListArguments(Argument(MemberAccessExpression(
+                    SyntaxKind.SimpleMemberAccessExpression,
+                    IdentifierName("Instance"),
+                    IdentifierName($"On{propertyName}PropertyChanged"))))));
         return methodDeclaration;
     }
 
     private static AttributeSyntax GeneratedCodeAttribute()
     {
         return Attribute(IdentifierName("global::System.CodeDom.Compiler.GeneratedCode"))
-            .AddArgumentListArguments(
-                AttributeArgument(LiteralExpression(
+            .AddArgumentListArguments(AttributeArgument(LiteralExpression(
                     SyntaxKind.StringLiteralExpression,
                     Literal("PropertyGenerator.Avalonia.Generator"))),
                 AttributeArgument(LiteralExpression(
@@ -441,13 +425,13 @@ public class StyledPropertyGenerator : IIncrementalGenerator
         CancellationToken token)
     {
         // First, check if we have a callback
-        if (attributeData.TryGetNamedArgument("DefaultValueCallback", out TypedConstant defaultValueCallback))
+        if (attributeData.TryGetNamedArgument("DefaultValueCallback", out var defaultValueCallback))
         {
             // This must be a valid 'string' value
             if (defaultValueCallback is { Type.SpecialType: SpecialType.System_String, Value: string { Length: > 0 } methodName })
             {
                 // Check that we can find a potential candidate callback method
-                if (TryFindDefaultValueCallbackMethod(propertySymbol, methodName, out IMethodSymbol? methodSymbol))
+                if (TryFindDefaultValueCallbackMethod(propertySymbol, methodName, out var methodSymbol))
                 {
                     // Validate the method has a valid signature as well
                     if (IsDefaultValueCallbackValid(propertySymbol, methodSymbol))
@@ -462,7 +446,7 @@ public class StyledPropertyGenerator : IIncrementalGenerator
         }
 
         token.ThrowIfCancellationRequested();
-        var hasDefaultValue = attributeData.TryGetConstructorArgument(0, out TypedConstant defaultValue);
+        var hasDefaultValue = attributeData.TryGetConstructorArgument(0, out var defaultValue);
         if (!hasDefaultValue)
         {
             hasDefaultValue = attributeData.TryGetNamedArgument("DefaultValue", out defaultValue);
@@ -480,12 +464,12 @@ public class StyledPropertyGenerator : IIncrementalGenerator
             // To do so, we get the application syntax, find the argument, then get the operation and inspect it.
             if (attributeData.ApplicationSyntaxReference?.GetSyntax(token) is AttributeSyntax attributeSyntax)
             {
-                foreach (AttributeArgumentSyntax attributeArgumentSyntax in attributeSyntax.ArgumentList?.Arguments ?? [])
+                foreach (var attributeArgumentSyntax in attributeSyntax.ArgumentList?.Arguments ?? [])
                 {
                     // Let's see whether the current argument is the one that set the 'DefaultValue' property
                     if (attributeArgumentSyntax.NameEquals?.Name.Identifier.Text is "DefaultValue")
                     {
-                        IOperation? operation = semanticModel.GetOperation(attributeArgumentSyntax.Expression, token);
+                        var operation = semanticModel.GetOperation(attributeArgumentSyntax.Expression, token);
 
                         // Double check that it's a constant field reference (it could also be a literal of some kind, etc.)
                         if (operation is IFieldReferenceOperation { Field: { Name: "UnsetValue" } fieldSymbol })
@@ -512,7 +496,7 @@ public class StyledPropertyGenerator : IIncrementalGenerator
         {
             // We need special logic to handle cases where the metadata type is different. For instance,
             // the XAML initialization won't work if the metadata type on a property is just 'object'.
-            ITypeSymbol effectiveMetadataTypeSymbol = metadataTypeSymbol ?? propertySymbol.Type;
+            var effectiveMetadataTypeSymbol = metadataTypeSymbol ?? propertySymbol.Type;
 
             // For non nullable types, we return 'default(T)', unless we can optimize for projected types
             return new AvaloniaPropertyDefaultValue.Default(
@@ -534,9 +518,9 @@ public class StyledPropertyGenerator : IIncrementalGenerator
     /// <returns>Whether <paramref name="methodSymbol"/> could be found.</returns>
     public static bool TryFindDefaultValueCallbackMethod(IPropertySymbol propertySymbol, string methodName, [NotNullWhen(true)] out IMethodSymbol? methodSymbol)
     {
-        ImmutableArray<ISymbol> memberSymbols = propertySymbol.ContainingType!.GetMembers(methodName);
+        var memberSymbols = propertySymbol.ContainingType!.GetMembers(methodName);
 
-        foreach (ISymbol member in memberSymbols)
+        foreach (var member in memberSymbols)
         {
             // Ignore all other member types
             if (member is not IMethodSymbol candidateSymbol)

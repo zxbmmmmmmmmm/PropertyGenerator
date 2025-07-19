@@ -1,4 +1,4 @@
-﻿// Licensed to the .NET Foundation under one or more agreements.
+// Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
@@ -34,8 +34,8 @@ partial record TypedConstantInfo
 
         if (arg.Kind == TypedConstantKind.Array)
         {
-            string elementTypeName = ((IArrayTypeSymbol)arg.Type!).ElementType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
-            ImmutableArray<TypedConstantInfo> items = arg.Values.Select(Create).ToImmutableArray();
+            var elementTypeName = ((IArrayTypeSymbol)arg.Type!).ElementType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+            var items = arg.Values.Select(Create).ToImmutableArray();
 
             return new Array(elementTypeName, items);
         }
@@ -61,7 +61,7 @@ partial record TypedConstantInfo
             },
             (TypedConstantKind.Type, ITypeSymbol type)
                 => new Type(type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)),
-            (TypedConstantKind.Enum, object value) when arg.Type!.TryGetEnumFieldName(value, out string? fieldName)
+            (TypedConstantKind.Enum, object value) when arg.Type!.TryGetEnumFieldName(value, out var fieldName)
                 => new KnownEnum(arg.Type!.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat), fieldName),
             (TypedConstantKind.Enum, object value)
                 => new Enum(arg.Type!.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat), value),
@@ -98,7 +98,7 @@ partial record TypedConstantInfo
         {
             ({ SpecialType: SpecialType.System_String }, string text) => new Primitive.String(text),
             ({ SpecialType: SpecialType.System_Boolean }, bool flag) => new Primitive.Boolean(flag),
-            (INamedTypeSymbol { TypeKind: TypeKind.Enum }, object value) when operationType.TryGetEnumFieldName(value, out string? fieldName)
+            (INamedTypeSymbol { TypeKind: TypeKind.Enum }, object value) when operationType.TryGetEnumFieldName(value, out var fieldName)
                 => new KnownEnum(operationType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat), fieldName),
             (INamedTypeSymbol { TypeKind: TypeKind.Enum }, object value)
                 => new Enum(operationType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat), value),
@@ -151,13 +151,13 @@ partial record TypedConstantInfo
 
         if (operation is (IArrayCreationOperation or ICollectionExpressionOperation) and { Type: null or IArrayTypeSymbol })
         {
-            string? elementTypeName = ((IArrayTypeSymbol?)operation.Type)?.ElementType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+            var elementTypeName = ((IArrayTypeSymbol?)operation.Type)?.ElementType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
 
             // If the element type is not available (since the attribute wasn't checked), just default to object
             elementTypeName ??= "object";
 
             // Handle all possible ways of initializing arrays in attributes
-            IEnumerable<ExpressionSyntax>? arrayElementExpressions = expression switch
+            var arrayElementExpressions = expression switch
             {
                 ImplicitArrayCreationExpressionSyntax { Initializer.Expressions: { } expressions } => expressions,
                 ArrayCreationExpressionSyntax { Initializer.Expressions: { } expressions } => expressions,
@@ -176,14 +176,14 @@ partial record TypedConstantInfo
             using ImmutableArrayBuilder<TypedConstantInfo> items = new();
 
             // Enumerate all array elements and extract serialized info for them
-            foreach (ExpressionSyntax elementExpressions in arrayElementExpressions)
+            foreach (var elementExpressions in arrayElementExpressions)
             {
                 if (semanticModel.GetOperation(elementExpressions, token) is not IOperation initializationOperation)
                 {
                     goto Failure;
                 }
 
-                if (!TryCreate(initializationOperation, semanticModel, elementExpressions, token, out TypedConstantInfo? elementInfo))
+                if (!TryCreate(initializationOperation, semanticModel, elementExpressions, token, out var elementInfo))
                 {
                     goto Failure;
                 }

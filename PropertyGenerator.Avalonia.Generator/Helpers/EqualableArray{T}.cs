@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Immutable;
@@ -102,8 +102,8 @@ internal readonly struct EquatableArray<T>(ImmutableArray<T> array) : IEquatable
         if (typeof(T) == typeof(byte))
         {
             ReadOnlySpan<T> span = array;
-            ref T r0 = ref MemoryMarshal.GetReference(span);
-            ref byte r1 = ref Unsafe.As<T, byte>(ref r0);
+            ref var r0 = ref MemoryMarshal.GetReference(span);
+            ref var r1 = ref Unsafe.As<T, byte>(ref r0);
 
             fixed (byte* p = &r1)
             {
@@ -114,7 +114,7 @@ internal readonly struct EquatableArray<T>(ImmutableArray<T> array) : IEquatable
         }
         else
         {
-            foreach (T item in array)
+            foreach (var item in array)
             {
                 hashCode.Add(item);
             }

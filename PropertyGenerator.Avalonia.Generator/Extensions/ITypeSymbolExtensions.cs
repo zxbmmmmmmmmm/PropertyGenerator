@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Diagnostics.CodeAnalysis;
 using Microsoft.CodeAnalysis;
 using PropertyGenerator.Avalonia.Generator.Helpers;
@@ -66,7 +66,7 @@ internal static class ITypeSymbolExtensions
         }
 
         // The default value of the enum is the value of its first constant field
-        foreach (ISymbol memberSymbol in symbol.GetMembers())
+        foreach (var memberSymbol in symbol.GetMembers())
         {
             if (memberSymbol is IFieldSymbol { IsConst: true, ConstantValue: object defaultValue })
             {
@@ -98,7 +98,7 @@ internal static class ITypeSymbolExtensions
         }
 
         // The default value of the enum is the value of its first constant field
-        foreach (ISymbol memberSymbol in symbol.GetMembers())
+        foreach (var memberSymbol in symbol.GetMembers())
         {
             if (memberSymbol is not IFieldSymbol { IsConst: true, ConstantValue: object fieldValue } fieldSymbol)
             {
@@ -140,7 +140,7 @@ internal static class ITypeSymbolExtensions
     /// <returns>Whether or not <paramref name="typeSymbol"/> inherits from <paramref name="baseTypeSymbol"/>.</returns>
     public static bool InheritsFromType(this ITypeSymbol typeSymbol, ITypeSymbol baseTypeSymbol)
     {
-        INamedTypeSymbol? currentBaseTypeSymbol = typeSymbol.BaseType;
+        var currentBaseTypeSymbol = typeSymbol.BaseType;
 
         while (currentBaseTypeSymbol is not null)
         {
@@ -163,7 +163,7 @@ internal static class ITypeSymbolExtensions
     /// <returns>Whether or not <paramref name="typeSymbol"/> inherits from <paramref name="name"/>.</returns>
     public static bool InheritsFromFullyQualifiedMetadataName(this ITypeSymbol typeSymbol, string name)
     {
-        INamedTypeSymbol? baseType = typeSymbol.BaseType;
+        var baseType = typeSymbol.BaseType;
 
         while (baseType is not null)
         {

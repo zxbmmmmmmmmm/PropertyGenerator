@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
@@ -32,7 +32,7 @@ internal struct HashCode
     /// <returns>A random seed.</returns>
     private static unsafe uint GenerateGlobalSeed()
     {
-        byte[] bytes = new byte[4];
+        var bytes = new byte[4];
 
         RandomNumberGenerator.Create().GetBytes(bytes);
 
@@ -47,8 +47,8 @@ internal struct HashCode
     /// <returns>The hash code that represents the value.</returns>
     public static int Combine<T1>(T1 value)
     {
-        uint hc1 = (uint)(value?.GetHashCode() ?? 0);
-        uint hash = MixEmptyState();
+        var hc1 = (uint)(value?.GetHashCode() ?? 0);
+        var hash = MixEmptyState();
 
         hash += 4;
         hash = QueueRound(hash, hc1);
@@ -67,9 +67,9 @@ internal struct HashCode
     /// <returns>The hash code that represents the values.</returns>
     public static int Combine<T1, T2>(T1 value1, T2 value2)
     {
-        uint hc1 = (uint)(value1?.GetHashCode() ?? 0);
-        uint hc2 = (uint)(value2?.GetHashCode() ?? 0);
-        uint hash = MixEmptyState();
+        var hc1 = (uint)(value1?.GetHashCode() ?? 0);
+        var hc2 = (uint)(value2?.GetHashCode() ?? 0);
+        var hash = MixEmptyState();
 
         hash += 8;
         hash = QueueRound(hash, hc1);
@@ -91,10 +91,10 @@ internal struct HashCode
     /// <returns>The hash code that represents the values.</returns>
     public static int Combine<T1, T2, T3>(T1 value1, T2 value2, T3 value3)
     {
-        uint hc1 = (uint)(value1?.GetHashCode() ?? 0);
-        uint hc2 = (uint)(value2?.GetHashCode() ?? 0);
-        uint hc3 = (uint)(value3?.GetHashCode() ?? 0);
-        uint hash = MixEmptyState();
+        var hc1 = (uint)(value1?.GetHashCode() ?? 0);
+        var hc2 = (uint)(value2?.GetHashCode() ?? 0);
+        var hc3 = (uint)(value3?.GetHashCode() ?? 0);
+        var hash = MixEmptyState();
 
         hash += 12;
         hash = QueueRound(hash, hc1);
@@ -119,19 +119,19 @@ internal struct HashCode
     /// <returns>The hash code that represents the values.</returns>
     public static int Combine<T1, T2, T3, T4>(T1 value1, T2 value2, T3 value3, T4 value4)
     {
-        uint hc1 = (uint)(value1?.GetHashCode() ?? 0);
-        uint hc2 = (uint)(value2?.GetHashCode() ?? 0);
-        uint hc3 = (uint)(value3?.GetHashCode() ?? 0);
-        uint hc4 = (uint)(value4?.GetHashCode() ?? 0);
+        var hc1 = (uint)(value1?.GetHashCode() ?? 0);
+        var hc2 = (uint)(value2?.GetHashCode() ?? 0);
+        var hc3 = (uint)(value3?.GetHashCode() ?? 0);
+        var hc4 = (uint)(value4?.GetHashCode() ?? 0);
 
-        Initialize(out uint v1, out uint v2, out uint v3, out uint v4);
+        Initialize(out var v1, out var v2, out var v3, out var v4);
 
         v1 = Round(v1, hc1);
         v2 = Round(v2, hc2);
         v3 = Round(v3, hc3);
         v4 = Round(v4, hc4);
 
-        uint hash = MixState(v1, v2, v3, v4);
+        var hash = MixState(v1, v2, v3, v4);
 
         hash += 16;
         hash = MixFinal(hash);
@@ -155,20 +155,20 @@ internal struct HashCode
     /// <returns>The hash code that represents the values.</returns>
     public static int Combine<T1, T2, T3, T4, T5>(T1 value1, T2 value2, T3 value3, T4 value4, T5 value5)
     {
-        uint hc1 = (uint)(value1?.GetHashCode() ?? 0);
-        uint hc2 = (uint)(value2?.GetHashCode() ?? 0);
-        uint hc3 = (uint)(value3?.GetHashCode() ?? 0);
-        uint hc4 = (uint)(value4?.GetHashCode() ?? 0);
-        uint hc5 = (uint)(value5?.GetHashCode() ?? 0);
+        var hc1 = (uint)(value1?.GetHashCode() ?? 0);
+        var hc2 = (uint)(value2?.GetHashCode() ?? 0);
+        var hc3 = (uint)(value3?.GetHashCode() ?? 0);
+        var hc4 = (uint)(value4?.GetHashCode() ?? 0);
+        var hc5 = (uint)(value5?.GetHashCode() ?? 0);
 
-        Initialize(out uint v1, out uint v2, out uint v3, out uint v4);
+        Initialize(out var v1, out var v2, out var v3, out var v4);
 
         v1 = Round(v1, hc1);
         v2 = Round(v2, hc2);
         v3 = Round(v3, hc3);
         v4 = Round(v4, hc4);
 
-        uint hash = MixState(v1, v2, v3, v4);
+        var hash = MixState(v1, v2, v3, v4);
 
         hash += 20;
         hash = QueueRound(hash, hc5);
@@ -195,21 +195,21 @@ internal struct HashCode
     /// <returns>The hash code that represents the values.</returns>
     public static int Combine<T1, T2, T3, T4, T5, T6>(T1 value1, T2 value2, T3 value3, T4 value4, T5 value5, T6 value6)
     {
-        uint hc1 = (uint)(value1?.GetHashCode() ?? 0);
-        uint hc2 = (uint)(value2?.GetHashCode() ?? 0);
-        uint hc3 = (uint)(value3?.GetHashCode() ?? 0);
-        uint hc4 = (uint)(value4?.GetHashCode() ?? 0);
-        uint hc5 = (uint)(value5?.GetHashCode() ?? 0);
-        uint hc6 = (uint)(value6?.GetHashCode() ?? 0);
+        var hc1 = (uint)(value1?.GetHashCode() ?? 0);
+        var hc2 = (uint)(value2?.GetHashCode() ?? 0);
+        var hc3 = (uint)(value3?.GetHashCode() ?? 0);
+        var hc4 = (uint)(value4?.GetHashCode() ?? 0);
+        var hc5 = (uint)(value5?.GetHashCode() ?? 0);
+        var hc6 = (uint)(value6?.GetHashCode() ?? 0);
 
-        Initialize(out uint v1, out uint v2, out uint v3, out uint v4);
+        Initialize(out var v1, out var v2, out var v3, out var v4);
 
         v1 = Round(v1, hc1);
         v2 = Round(v2, hc2);
         v3 = Round(v3, hc3);
         v4 = Round(v4, hc4);
 
-        uint hash = MixState(v1, v2, v3, v4);
+        var hash = MixState(v1, v2, v3, v4);
 
         hash += 24;
         hash = QueueRound(hash, hc5);
@@ -239,22 +239,22 @@ internal struct HashCode
     /// <returns>The hash code that represents the values.</returns>
     public static int Combine<T1, T2, T3, T4, T5, T6, T7>(T1 value1, T2 value2, T3 value3, T4 value4, T5 value5, T6 value6, T7 value7)
     {
-        uint hc1 = (uint)(value1?.GetHashCode() ?? 0);
-        uint hc2 = (uint)(value2?.GetHashCode() ?? 0);
-        uint hc3 = (uint)(value3?.GetHashCode() ?? 0);
-        uint hc4 = (uint)(value4?.GetHashCode() ?? 0);
-        uint hc5 = (uint)(value5?.GetHashCode() ?? 0);
-        uint hc6 = (uint)(value6?.GetHashCode() ?? 0);
-        uint hc7 = (uint)(value7?.GetHashCode() ?? 0);
+        var hc1 = (uint)(value1?.GetHashCode() ?? 0);
+        var hc2 = (uint)(value2?.GetHashCode() ?? 0);
+        var hc3 = (uint)(value3?.GetHashCode() ?? 0);
+        var hc4 = (uint)(value4?.GetHashCode() ?? 0);
+        var hc5 = (uint)(value5?.GetHashCode() ?? 0);
+        var hc6 = (uint)(value6?.GetHashCode() ?? 0);
+        var hc7 = (uint)(value7?.GetHashCode() ?? 0);
 
-        Initialize(out uint v1, out uint v2, out uint v3, out uint v4);
+        Initialize(out var v1, out var v2, out var v3, out var v4);
 
         v1 = Round(v1, hc1);
         v2 = Round(v2, hc2);
         v3 = Round(v3, hc3);
         v4 = Round(v4, hc4);
 
-        uint hash = MixState(v1, v2, v3, v4);
+        var hash = MixState(v1, v2, v3, v4);
 
         hash += 28;
         hash = QueueRound(hash, hc5);
@@ -287,16 +287,16 @@ internal struct HashCode
     /// <returns>The hash code that represents the values.</returns>
     public static int Combine<T1, T2, T3, T4, T5, T6, T7, T8>(T1 value1, T2 value2, T3 value3, T4 value4, T5 value5, T6 value6, T7 value7, T8 value8)
     {
-        uint hc1 = (uint)(value1?.GetHashCode() ?? 0);
-        uint hc2 = (uint)(value2?.GetHashCode() ?? 0);
-        uint hc3 = (uint)(value3?.GetHashCode() ?? 0);
-        uint hc4 = (uint)(value4?.GetHashCode() ?? 0);
-        uint hc5 = (uint)(value5?.GetHashCode() ?? 0);
-        uint hc6 = (uint)(value6?.GetHashCode() ?? 0);
-        uint hc7 = (uint)(value7?.GetHashCode() ?? 0);
-        uint hc8 = (uint)(value8?.GetHashCode() ?? 0);
+        var hc1 = (uint)(value1?.GetHashCode() ?? 0);
+        var hc2 = (uint)(value2?.GetHashCode() ?? 0);
+        var hc3 = (uint)(value3?.GetHashCode() ?? 0);
+        var hc4 = (uint)(value4?.GetHashCode() ?? 0);
+        var hc5 = (uint)(value5?.GetHashCode() ?? 0);
+        var hc6 = (uint)(value6?.GetHashCode() ?? 0);
+        var hc7 = (uint)(value7?.GetHashCode() ?? 0);
+        var hc8 = (uint)(value8?.GetHashCode() ?? 0);
 
-        Initialize(out uint v1, out uint v2, out uint v3, out uint v4);
+        Initialize(out var v1, out var v2, out var v3, out var v4);
 
         v1 = Round(v1, hc1);
         v2 = Round(v2, hc2);
@@ -308,7 +308,7 @@ internal struct HashCode
         v3 = Round(v3, hc7);
         v4 = Round(v4, hc8);
 
-        uint hash = MixState(v1, v2, v3, v4);
+        var hash = MixState(v1, v2, v3, v4);
 
         hash += 32;
         hash = MixFinal(hash);
@@ -343,8 +343,8 @@ internal struct HashCode
     /// <param name="value">The span.</param>
     public void AddBytes(ReadOnlySpan<byte> value)
     {
-        ref byte pos = ref MemoryMarshal.GetReference(value);
-        ref byte end = ref Unsafe.Add(ref pos, value.Length);
+        ref var pos = ref MemoryMarshal.GetReference(value);
+        ref var end = ref Unsafe.Add(ref pos, value.Length);
 
         while ((nint)Unsafe.ByteOffset(ref pos, ref end) >= sizeof(int))
         {
@@ -406,9 +406,9 @@ internal struct HashCode
 
     private void Add(int value)
     {
-        uint val = (uint)value;
-        uint previousLength = length++;
-        uint position = previousLength % 4;
+        var val = (uint)value;
+        var previousLength = length++;
+        var position = previousLength % 4;
 
         if (position == 0)
         {
@@ -442,9 +442,9 @@ internal struct HashCode
     /// <returns>The resulting hashcode from the current instance.</returns>
     public readonly int ToHashCode()
     {
-        uint length = this.length;
-        uint position = length % 4;
-        uint hash = length < 4 ? MixEmptyState() : MixState(v1, v2, v3, v4);
+        var length = this.length;
+        var position = length % 4;
+        var hash = length < 4 ? MixEmptyState() : MixState(v1, v2, v3, v4);
 
         hash += length * 4;
 

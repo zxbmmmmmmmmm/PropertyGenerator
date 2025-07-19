@@ -53,7 +53,7 @@ internal static class ISymbolExtensions
     /// <returns>Whether or not <paramref name="symbol"/> has an attribute with the specified type.</returns>
     public static bool TryGetAttributeWithType(this ISymbol symbol, ITypeSymbol typeSymbol, [NotNullWhen(true)] out AttributeData? attributeData)
     {
-        foreach (AttributeData attribute in symbol.GetAttributes())
+        foreach (var attribute in symbol.GetAttributes())
         {
             if (SymbolEqualityComparer.Default.Equals(attribute.AttributeClass, typeSymbol))
             {
@@ -77,7 +77,7 @@ internal static class ISymbolExtensions
     /// <returns>Whether or not <paramref name="symbol"/> has an attribute with the specified type.</returns>
     public static bool TryGetAttributeWithAnyType(this ISymbol symbol, ImmutableArray<INamedTypeSymbol> typeSymbols, [NotNullWhen(true)] out AttributeData? attributeData)
     {
-        foreach (AttributeData attribute in symbol.GetAttributes())
+        foreach (var attribute in symbol.GetAttributes())
         {
             if (typeSymbols.Contains(attribute.AttributeClass!, SymbolEqualityComparer.Default))
             {
@@ -100,7 +100,7 @@ internal static class ISymbolExtensions
     public static Accessibility GetEffectiveAccessibility(this ISymbol symbol)
     {
         // Start by assuming it's visible
-        Accessibility visibility = Accessibility.Public;
+        var visibility = Accessibility.Public;
 
         // Handle special cases
         switch (symbol.Kind)
