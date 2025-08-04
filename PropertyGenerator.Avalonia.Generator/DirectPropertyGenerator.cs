@@ -1,14 +1,14 @@
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
 using PropertyGenerator.Avalonia.Generator.Extensions;
-using PropertyGenerator.Avalonia.Generator.Models;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading;
 using PropertyGenerator.Avalonia.Generator.Helpers;
+using PropertyGenerator.Avalonia.Generator.Models;
 using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 using static PropertyGenerator.Avalonia.Generator.Helpers.PropertyGenerationHelper;
 using PropertyTuple = (Microsoft.CodeAnalysis.IPropertySymbol PropertySymbol, Microsoft.CodeAnalysis.SemanticModel SemanticModel);
@@ -16,9 +16,9 @@ using PropertyTuple = (Microsoft.CodeAnalysis.IPropertySymbol PropertySymbol, Mi
 namespace PropertyGenerator.Avalonia.Generator;
 
 [Generator]
-public class StyledPropertyGenerator : IIncrementalGenerator
+public class DirectPropertyGenerator : IIncrementalGenerator
 {
-    private const string AttributeFullName = "PropertyGenerator.Avalonia.GeneratedStyledPropertyAttribute";
+    private const string AttributeFullName = "PropertyGenerator.Avalonia.GeneratedDirectPropertyAttribute";
 
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
@@ -63,13 +63,13 @@ public class StyledPropertyGenerator : IIncrementalGenerator
             foreach (var group in ctx.GroupBy<PropertyTuple, INamedTypeSymbol?>(p => p.PropertySymbol.ContainingType, SymbolEqualityComparer.Default))
             {
                 var containingClass = group.Key;
-                if (containingClass is null || !containingClass.InheritsFromFullyQualifiedMetadataName("Avalonia.StyledElement"))
+                if (containingClass is null || !containingClass.InheritsFromFullyQualifiedMetadataName("Avalonia.AvaloniaObject"))
                 {
                     continue;
                 }
 
                 var sourceCode = GenerateClassSource(compilation, containingClass, [.. group]);
-                spc.AddSource($"{containingClass.ContainingNamespace.ToDisplayString()}.{containingClass.Name}.styled.g.cs",
+                spc.AddSource($"{containingClass.ContainingNamespace.ToDisplayString()}.{containingClass.Name}.direct.g.cs",
                     SourceText.From(sourceCode, Encoding.UTF8));
             }
         });
@@ -98,8 +98,9 @@ public class StyledPropertyGenerator : IIncrementalGenerator
         var classDeclaration = ClassDeclaration(className).AddModifiers(Token(SyntaxKind.PartialKeyword));
         foreach (var (property, model) in properties)
         {
+            var propertyDeclaration = GenerateProperty(property, model);
             classDeclaration = classDeclaration.AddMembers(GenerateFieldDeclaration(compilation, classSymbol, property, model));
-            classDeclaration = classDeclaration.AddMembers(GeneratePropertyDeclaration(property));
+            classDeclaration = classDeclaration.AddMembers(propertyDeclaration);
             if (generateOnPropertyChanged)
                 classDeclaration = classDeclaration.AddMembers(GenerateChangedMethod(property));
         }
@@ -108,22 +109,64 @@ public class StyledPropertyGenerator : IIncrementalGenerator
         return namespaceDeclarationSyntax;
     }
 
+    private static PropertyDeclarationSyntax GenerateProperty(IPropertySymbol propertySymbol, SemanticModel semanticModel)
+    {
+        var propertyName = propertySymbol.Name;
+        var attribute = propertySymbol.GetAttributes().First(p => p.AttributeClass!.ToDisplayString() == AttributeFullName);
+
+        var defaultValue = DefaultValueHelper.GetDefaultValue(attribute, propertySymbol, semanticModel, CancellationToken.None);
+
+        ExpressionSyntax? initializerExpression = null;
+        if (defaultValue is not AvaloniaPropertyDefaultValue.UnsetValue and not AvaloniaPropertyDefaultValue.Null)
+        {
+            if (defaultValue is AvaloniaPropertyDefaultValue.Callback callback)
+            {
+                initializerExpression = InvocationExpression(IdentifierName(callback.MethodName));
+            }
+            else
+            {
+                initializerExpression = ParseExpression(defaultValue.ToString());
+            }
+        }
+
+        var property = PropertyDeclaration(propertySymbol.Type.GetTypeSyntax(), Identifier(propertyName))
+            .AddModifiers(propertySymbol.DeclaredAccessibility.GetAccessibilityModifiers())
+            .AddModifiers(Token(SyntaxKind.PartialKeyword))
+            .AddAccessorListAccessors(
+                AccessorDeclaration(SyntaxKind.GetAccessorDeclaration)
+                    .WithExpressionBody(ArrowExpressionClause(IdentifierName("field")))
+                    .WithSemicolonToken(Token(SyntaxKind.SemicolonToken)),
+                AccessorDeclaration(SyntaxKind.SetAccessorDeclaration)
+                    .WithExpressionBody(ArrowExpressionClause(
+                        InvocationExpression(IdentifierName("SetAndRaise"))
+                            .AddArgumentListArguments(
+                                Argument(IdentifierName($"{propertyName}Property")),
+                                Argument(IdentifierName("field")).WithRefOrOutKeyword(Token(SyntaxKind.RefKeyword)),
+                                Argument(IdentifierName("value"))
+                            )
+                    ))
+                    .WithSemicolonToken(Token(SyntaxKind.SemicolonToken))
+            );
+
+        if (initializerExpression != null)
+        {
+            property = property.WithInitializer(EqualsValueClause(initializerExpression))
+                               .WithSemicolonToken(Token(SyntaxKind.SemicolonToken));
+        }
+
+        return property;
+    }
+
     private static FieldDeclarationSyntax GenerateFieldDeclaration(Compilation compilation, INamedTypeSymbol classSymbol, IPropertySymbol propertySymbol, SemanticModel model)
     {
         var propertyName = propertySymbol.Name;
         var className = classSymbol.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat);
-        var styledPropertySymbolName = compilation.GetTypeByMetadataName("Avalonia.StyledProperty`1")!
-            .Construct([propertySymbol.Type], [propertySymbol.NullableAnnotation])
+        var directPropertySymbolName = compilation.GetTypeByMetadataName("Avalonia.DirectProperty`2")!
+            .Construct([classSymbol, propertySymbol.Type])
             .ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
         var avaloniaPropertySymbolName = compilation.GetTypeByMetadataName("Avalonia.AvaloniaProperty")!
             .ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
-        var attribute = propertySymbol.GetAttributes().FirstOrDefault(p => p.AttributeClass!.ToDisplayString() == AttributeFullName)!;
-
-        var defaultValue = DefaultValueHelper.GetDefaultValue(
-            attribute,
-            propertySymbol,
-            model,
-            CancellationToken.None);
+        var attribute = propertySymbol.GetAttributes().First(p => p.AttributeClass!.ToDisplayString() == AttributeFullName);
 
         List<ArgumentSyntax> arguments =
         [
@@ -131,24 +174,38 @@ public class StyledPropertyGenerator : IIncrementalGenerator
                 .WithNameColon(NameColon(IdentifierName("name")))
         ];
 
-        if (defaultValue is not AvaloniaPropertyDefaultValue.UnsetValue)
+        if (attribute.TryGetNamedArgument("Getter", out var getter) && getter.Value is string getterName)
         {
-            if (defaultValue is AvaloniaPropertyDefaultValue.Callback callback)
+            arguments.Add(Argument(SimpleLambdaExpression(Parameter(Identifier("o")), InvocationExpression(MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, IdentifierName("o"), IdentifierName(getterName)))))
+                .WithNameColon(NameColon(IdentifierName("getter"))));
+
+            if (attribute.TryGetNamedArgument("Setter", out var setter) && setter.Value is string setterName)
             {
-                arguments.Add(Argument(InvocationExpression(IdentifierName(callback.MethodName)))
-                    .WithNameColon(NameColon(IdentifierName("defaultValue"))));
-            }
-            else
-            {
-                arguments.Add(Argument(IdentifierName(defaultValue.ToString()))
-                    .WithNameColon(NameColon(IdentifierName("defaultValue"))));
+                arguments.Add(
+                    Argument(
+                        ParenthesizedLambdaExpression(
+                            InvocationExpression(
+                                MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, IdentifierName("o"), IdentifierName(setterName)))
+                            .AddArgumentListArguments(Argument(IdentifierName("v"))))
+                            .AddParameterListParameters(Parameter(Identifier("o")),
+                                Parameter(Identifier("v"))))
+                        .WithNameColon(NameColon(IdentifierName("setter"))));
             }
         }
-
-        if (attribute.TryGetNamedArgument("Validate", out var validate))
+        else
         {
-            arguments.Add(Argument(IdentifierName(validate.Value!.ToString()))
-                .WithNameColon(NameColon(IdentifierName("validate"))));
+            arguments.Add(Argument(SimpleLambdaExpression(Parameter(Identifier("o")), MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, IdentifierName("o"), IdentifierName(propertyName))))
+                .WithNameColon(NameColon(IdentifierName("getter"))));
+
+            if (propertySymbol.SetMethod is not null)
+            {
+                arguments.Add(Argument(ParenthesizedLambdaExpression(
+                        AssignmentExpression(SyntaxKind.SimpleAssignmentExpression,
+                            MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, IdentifierName("o"), IdentifierName(propertyName)),
+                            IdentifierName("v")))
+                        .WithParameterList(ParameterList(SeparatedList<ParameterSyntax>([Parameter(Identifier("o")), Parameter(Identifier("v"))]))))
+                    .WithNameColon(NameColon(IdentifierName("setter"))));
+            }
         }
 
         if (attribute.TryGetNamedArgument("Coerce", out var coerce))
@@ -163,12 +220,6 @@ public class StyledPropertyGenerator : IIncrementalGenerator
                 .WithNameColon(NameColon(IdentifierName("enableDataValidation"))));
         }
 
-        if (attribute.TryGetNamedArgument("Inherits", out var inherits))
-        {
-            arguments.Add(Argument(IdentifierName(inherits.Value!.ToString().ToLower()))
-                .WithNameColon(NameColon(IdentifierName("inherits"))));
-        }
-
         if (attribute.TryGetNamedArgument("DefaultBindingMode", out var defaultBindingMode))
         {
             arguments.Add(Argument(IdentifierName(TypedConstantInfo.Create(defaultBindingMode).ToString()))
@@ -176,12 +227,12 @@ public class StyledPropertyGenerator : IIncrementalGenerator
         }
 
         var fieldDeclaration = FieldDeclaration(
-                VariableDeclaration(IdentifierName(styledPropertySymbolName))
+                VariableDeclaration(IdentifierName(directPropertySymbolName))
                     .WithVariables(SingletonSeparatedList(VariableDeclarator(Identifier($"{propertyName}Property"))
                         .WithInitializer(EqualsValueClause(InvocationExpression(MemberAccessExpression(
                                 SyntaxKind.SimpleMemberAccessExpression,
                                 IdentifierName(avaloniaPropertySymbolName),
-                                GenericName(Identifier("Register"))
+                                GenericName(Identifier("RegisterDirect"))
                                     .AddTypeArgumentListArguments(
                                         IdentifierName(className),
                                         propertySymbol.Type.GetTypeSyntax())))
@@ -194,7 +245,7 @@ public class StyledPropertyGenerator : IIncrementalGenerator
             .WithLeadingTrivia(ParseLeadingTrivia(
                 $$"""
                   /// <summary>
-                  /// The backing <see cref="global::Avalonia.StyledProperty{TValue}"/> instance for <see cref="{{propertyName}}"/>.
+                  /// The backing <see cref="global::Avalonia.DirectProperty{TOwner, TValue}"/> instance for <see cref="{{propertyName}}"/>.
                   /// </summary>
 
                   """));

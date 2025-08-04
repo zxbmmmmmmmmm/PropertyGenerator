@@ -1,6 +1,9 @@
 using System;
+using System.Data.SqlTypes;
 using System.Diagnostics.CodeAnalysis;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using PropertyGenerator.Avalonia.Generator.Helpers;
 
 namespace PropertyGenerator.Avalonia.Generator.Extensions;
@@ -287,4 +290,13 @@ internal static class ITypeSymbolExtensions
 
         return builder.WrittenSpan.SequenceEqual(namespaceName.AsSpan());
     }
+
+    internal static TypeSyntax GetTypeSyntax(this ITypeSymbol typeSymbol)
+    {
+        return SyntaxFactory.IdentifierName(typeSymbol.ToDisplayString(
+            typeSymbol.NullableAnnotation is NullableAnnotation.Annotated
+                ? NullableFlowState.MaybeNull
+                : NullableFlowState.NotNull));
+    }
+    internal static bool HasNullableAnnotation(this ITypeSymbol typeSymbol) => typeSymbol.NullableAnnotation is NullableAnnotation.Annotated;
 }

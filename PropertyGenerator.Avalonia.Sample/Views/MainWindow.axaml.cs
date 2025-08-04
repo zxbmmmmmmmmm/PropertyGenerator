@@ -1,4 +1,6 @@
+using System.Collections;
 using Avalonia;
+using Avalonia.Collections;
 using Avalonia.Controls;
 using Avalonia.Data;
 
@@ -33,7 +35,6 @@ public partial class MainWindow : Window
         DefaultBindingMode = BindingMode.TwoWay)]
     public partial bool? IsStarted { get; set; }
 
-
     private static bool DefaultValueCallback()
     {
         return true;
@@ -46,4 +47,8 @@ public partial class MainWindow : Window
     {
         return true;
     }
+
+
+    [GeneratedDirectProperty]
+    public partial IEnumerable? Items { get; set; }
 }
