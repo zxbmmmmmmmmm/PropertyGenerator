@@ -68,7 +68,7 @@ public class OnPropertyChangedGenerator : IIncrementalGenerator
                 var currentStyledProps = group.Where(p => p.PropertySymbol.GetAttributes().Any(a => a.AttributeClass?.ToDisplayString() == StyledAttributeFullName)).ToList();
 
                 var sourceCode = GenerateClassSource(containingClass, currentStyledProps, currentDirectProps);
-                spc.AddSource($"{containingClass.ContainingNamespace.ToDisplayString()}.{containingClass.Name}.onpropertychanged.g.cs",
+                spc.AddSource($"{containingClass.ContainingNamespace.ToDisplayString()}.{containingClass.Name}.OnPropertyChanged.g.cs",
                     SourceText.From(sourceCode, Encoding.UTF8));
             }
         });

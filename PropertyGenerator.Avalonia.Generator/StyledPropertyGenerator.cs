@@ -69,7 +69,7 @@ public class StyledPropertyGenerator : IIncrementalGenerator
                 }
 
                 var sourceCode = GenerateClassSource(compilation, containingClass, [.. group]);
-                spc.AddSource($"{containingClass.ContainingNamespace.ToDisplayString()}.{containingClass.Name}.styled.g.cs",
+                spc.AddSource($"{containingClass.ContainingNamespace.ToDisplayString()}.{containingClass.Name}.Styled.g.cs",
                     SourceText.From(sourceCode, Encoding.UTF8));
             }
         });
@@ -113,8 +113,12 @@ public class StyledPropertyGenerator : IIncrementalGenerator
         var propertyName = propertySymbol.Name;
         var className = classSymbol.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat);
         var styledPropertySymbolName = compilation.GetTypeByMetadataName("Avalonia.StyledProperty`1")!
-            .Construct([propertySymbol.Type], [propertySymbol.NullableAnnotation])
-            .ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+            .Construct(propertySymbol.Type)
+            .ToDisplayString(new SymbolDisplayFormat(
+                globalNamespaceStyle: SymbolDisplayGlobalNamespaceStyle.Included,
+                typeQualificationStyle: SymbolDisplayTypeQualificationStyle.NameAndContainingTypesAndNamespaces,
+                genericsOptions: SymbolDisplayGenericsOptions.IncludeTypeParameters,
+                miscellaneousOptions: SymbolDisplayMiscellaneousOptions.IncludeNullableReferenceTypeModifier));
         var avaloniaPropertySymbolName = compilation.GetTypeByMetadataName("Avalonia.AvaloniaProperty")!
             .ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
         var attribute = propertySymbol.GetAttributes().FirstOrDefault(p => p.AttributeClass!.ToDisplayString() == AttributeFullName)!;

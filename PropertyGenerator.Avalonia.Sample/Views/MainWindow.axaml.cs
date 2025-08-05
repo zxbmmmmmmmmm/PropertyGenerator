@@ -4,7 +4,7 @@ using Avalonia.Collections;
 using Avalonia.Controls;
 using Avalonia.Data;
 
-namespace PropertyGenerator.Avalonia.Sample.Views;
+namespace PropertyGenerator.Avalonia.Sample.Views; 
 public partial class MainWindow : Window
 {
     public MainWindow()
@@ -44,8 +44,11 @@ public partial class MainWindow : Window
         return true;
     }
 
+    [GeneratedDirectProperty]
+    public partial IEnumerable? Items2 { get; set; }
 
-    [GeneratedDirectProperty(Getter = nameof(Getter),Setter = nameof(Setter))]
+
+    [GeneratedDirectProperty(Getter = nameof(Getter), Setter = nameof(Setter))]
     public partial IEnumerable? Items { get; set; }
 
     public static IEnumerable? Getter(MainWindow o) => o.Items;
