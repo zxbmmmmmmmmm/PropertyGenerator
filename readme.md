@@ -82,31 +82,15 @@ Similar in usage to `StyledProperty` generator
 [GeneratedDirectProperty]
 public partial IEnumerable? Items { get; set; }
 ```
-```csharp
-[GeneratedDirectProperty(1)]
-public partial int Count { get; set; }
-```
+
 ***
 
-Due to the inability of `partial property` to be initialized directly, `GenerateredDirectProperty` still needs to use `DefaultValueCallback` to complete complex initialization operations
-
+You can directly initialize DirectProperty
 ```csharp
-[GeneratedDirectProperty(DefaultValueCallback = nameof(DefaultValueCallback))]
-public partial IEnumerable? Items { get; set; }
-private static IEnumerable? DefaultValueCallback() => new AvaloniaList<AvaloniaObject>();
+[GeneratedDirectProperty]
+public partial IEnumerable? Items { get; set; } = new AvaloniaList<object>();
 ```
 
-Generated code:
-
-```csharp
-public static readonly DirectProperty<MainWindow, IEnumerable?> ItemsProperty =
-    AvaloniaProperty.RegisterDirect<MainWindow, IEnumerable?>(
-    name: nameof(Items2), 
-    getter: o => o.Items2, 
-    setter: (o, v) => o.Items2 = v);
-
-public partial IEnumerable? Items { get => field; set => SetAndRaise(ItemsProperty, ref field, value); } = DefaultValueCallback();
-```
 
 ***
 
