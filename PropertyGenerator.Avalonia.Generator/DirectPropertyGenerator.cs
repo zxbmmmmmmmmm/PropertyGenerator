@@ -176,20 +176,13 @@ public class DirectPropertyGenerator : IIncrementalGenerator
 
         if (attribute.TryGetNamedArgument("Getter", out var getter) && getter.Value is string getterName)
         {
-            arguments.Add(Argument(SimpleLambdaExpression(Parameter(Identifier("o")), InvocationExpression(MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, IdentifierName("o"), IdentifierName(getterName)))))
+            arguments.Add(Argument(IdentifierName(getterName))
                 .WithNameColon(NameColon(IdentifierName("getter"))));
 
             if (attribute.TryGetNamedArgument("Setter", out var setter) && setter.Value is string setterName)
             {
-                arguments.Add(
-                    Argument(
-                        ParenthesizedLambdaExpression(
-                            InvocationExpression(
-                                MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, IdentifierName("o"), IdentifierName(setterName)))
-                            .AddArgumentListArguments(Argument(IdentifierName("v"))))
-                            .AddParameterListParameters(Parameter(Identifier("o")),
-                                Parameter(Identifier("v"))))
-                        .WithNameColon(NameColon(IdentifierName("setter"))));
+                arguments.Add(Argument(IdentifierName(setterName))
+                    .WithNameColon(NameColon(IdentifierName("setter"))));
             }
         }
         else

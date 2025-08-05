@@ -10,10 +10,6 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
-        CountProperty.Changed.AddClassHandler<MainWindow>((s,e) =>
-        {
-        });
-        IsStarted = true;
     }
 
     /// <summary>
@@ -49,6 +45,9 @@ public partial class MainWindow : Window
     }
 
 
-    [GeneratedDirectProperty]
+    [GeneratedDirectProperty(Getter = nameof(Getter),Setter = nameof(Setter))]
     public partial IEnumerable? Items { get; set; }
+
+    public static IEnumerable? Getter(MainWindow o) => o.Items;
+    public static void Setter(MainWindow o, IEnumerable? v) => o.Items = v;
 }
