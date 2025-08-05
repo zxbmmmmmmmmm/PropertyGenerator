@@ -85,7 +85,7 @@ public partial IEnumerable? Items { get; set; }
 
 ***
 
-You can directly initialize DirectProperty
+You can directly initialize `DirectProperty`
 ```csharp
 [GeneratedDirectProperty]
 public partial IEnumerable? Items { get; set; } = new AvaloniaList<object>();
@@ -117,7 +117,7 @@ public partial IEnumerable? Items { get => field; set => SetAndRaise(ItemsProper
 
 ## OnPropertyChanged
 
-By default, the generator will override`OnPropertyChanged` and generate partial method at the same time:
+By default, the generator will override`OnPropertyChanged` and generate partial methods at the same time:
 
 ```csharp
 partial void OnCountPropertyChanged(int newValue);
