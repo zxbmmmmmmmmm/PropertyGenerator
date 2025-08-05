@@ -85,7 +85,7 @@ internal class PropertyGenerationHelper
                     Literal("PropertyGenerator.Avalonia.Generator"))),
                 AttributeArgument(LiteralExpression(
                     SyntaxKind.StringLiteralExpression,
-                    Literal("1.0.2.0"))));
+                    Literal("1.1.0.0"))));
     }
 
     public static PostfixUnaryExpressionSyntax SuppressNullableWarningExpression(ExpressionSyntax operand)
