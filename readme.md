@@ -1,7 +1,7 @@
 # PropertyGenerator.Avalonia
 
-![NuGet Version](https://img.shields.io/nuget/vpre/PropertyGenerator.Avalonia?link=https%3A%2F%2Fwww.nuget.org%2Fpackages%2FPropertyGenerator.Avalonia)
-![NuGet Downloads](https://img.shields.io/nuget/dt/PropertyGenerator.Avalonia?link=https%3A%2F%2Fwww.nuget.org%2Fpackages%2FPropertyGenerator.Avalonia)
+[![NuGet Version](https://img.shields.io/nuget/vpre/PropertyGenerator.Avalonia)](https://www.nuget.org/packages/PropertyGenerator.Avalonia)
+[![NuGet Downloads](https://img.shields.io/nuget/dt/PropertyGenerator.Avalonia)](https://www.nuget.org/packages/PropertyGenerator.Avalonia)
 
 Auto generate `StyledProperty` and `DirectProperty` for Avalonia applications
 
