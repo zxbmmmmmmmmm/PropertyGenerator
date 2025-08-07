@@ -17,12 +17,11 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\PropertyGenerator.Avalonia.Generator\PropertyGenerator.Avalonia.Generator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+        <ProjectReference Include="..\PropertyGenerator.Avalonia.Generator\PropertyGenerator.Avalonia.Generator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="true" />
         <None Include="..\readme.md">
           <Pack>True</Pack>
           <PackagePath>\</PackagePath>
         </None>
-        <None Include="PropertyGenerator.Avalonia.Generator.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
     </ItemGroup>
 
     <ItemGroup>
