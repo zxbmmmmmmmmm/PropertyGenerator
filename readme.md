@@ -142,11 +142,15 @@ protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs chang
 ```
 You can still handle all property changes by using `OnPropertyChangedOverride` method.
 
+***
+
 To generate property changed methods for properties in base class, you can use `GenerateOnPropertyChangedAttribute` on target class:
 ```csharp
 [GenerateOnPropertyChanged(nameof(Height))]
 public partial class MainWindow : Window
 ```
+
+***
 
 To disable this feature, use `DoNotGenerateOnPropertyChangedAttribute` for class or assembly:
 
