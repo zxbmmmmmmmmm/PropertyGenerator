@@ -117,12 +117,14 @@ public partial IEnumerable? Items { get => field; set => SetAndRaise(ItemsProper
 
 ## OnPropertyChanged
 
-By default, the generator will override`OnPropertyChanged` and generate partial methods at the same time:
+By default, the generator will override `OnPropertyChanged` and generate property changed methods at the same time:
 
 ```csharp
 partial void OnCountPropertyChanged(int newValue);
 partial void OnCountPropertyChanged(int oldValue, int newValue);
 partial void OnCountPropertyChanged(AvaloniaPropertyChangedEventArgs e);
+
+partial void OnPropertyChangedOverride(AvaloniaPropertyChangedEventArgs change);
 
 protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
 {
@@ -134,20 +136,25 @@ protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs chang
             OnCountPropertyChanged((int)change.NewValue);
             OnCountPropertyChanged((int)change.OldValue, (int)change.NewValue);
             break;
+		OnPropertyChangedOverride(change);
     }
 }
 ```
+You can still handle all property changes by using `OnPropertyChangedOverride` method.
 
-To disable this feature, please add `DoNotGenerateOnPropertyChangedAttribute`
+To generate property changed methods for properties in base class, you can use `GenerateOnPropertyChangedAttribute` on target class:
+```csharp
+[GenerateOnPropertyChanged(nameof(Height))]
+public partial class MainWindow : Window
+```
+
+To disable this feature, use `DoNotGenerateOnPropertyChangedAttribute` for class or assembly:
 
 ```csharp
 [DoNotGenerateOnPropertyChanged]
 public partial class MainWindow : Window
 { ... }
 ```
-
-You can also disable this feature on the entire assembly:
-
 ```csharp
 [assembly: DoNotGenerateOnPropertyChanged]
 ```
