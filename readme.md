@@ -148,6 +148,7 @@ To generate property changed methods for properties in base class, you can use `
 ```csharp
 [GenerateOnPropertyChanged(nameof(Height))]
 public partial class MainWindow : Window
+{ ... }
 ```
 
 ***
