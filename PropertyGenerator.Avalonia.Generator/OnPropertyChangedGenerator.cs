@@ -63,7 +63,7 @@ public class OnPropertyChangedGenerator : IIncrementalGenerator
             generationTargets.AddRange(directProps.Select(p => (p.PropertySymbol.ContainingType, p.PropertySymbol, p.SemanticModel)));
             generationTargets.AddRange(styledProps.Select(p => (p.PropertySymbol.ContainingType, p.PropertySymbol, p.SemanticModel)));
 
-            // 获取attribute中对应的属性
+            // 获取Attribute中对应的属性
             var generateOnPropertyChangedAttributeSymbol = compilation.GetTypeByMetadataName(GenerateOnPropertyChangedAttributeFullName);
             if (generateOnPropertyChangedAttributeSymbol is not null)
             {
@@ -107,7 +107,6 @@ public class OnPropertyChangedGenerator : IIncrementalGenerator
 
                         if (propertySymbol is not null)
                         {
-                            // 关键改动：将属性与应用特性的类（targetClass）关联，而不是属性所在的类
                             generationTargets.Add((targetClass, propertySymbol, semanticModel));
                         }
                     }
@@ -164,7 +163,7 @@ public class OnPropertyChangedGenerator : IIncrementalGenerator
 
         var classDeclaration = ClassDeclaration(className)
             .AddModifiers(Token(SyntaxKind.PartialKeyword))
-            .AddMembers(GenerateOnPropertyChangedOverride(styledProperties, directProperties))
+            .AddMembers(GenerateOnPropertyChanged(styledProperties, directProperties), GenerateOnPropertyChangedOverride())
             .WithLeadingTrivia(ParseLeadingTrivia($"/// <inheritdoc cref=\"{className}\"/>\r\n"));
 
         foreach (var (property, _) in onChangedProperties)
@@ -175,32 +174,8 @@ public class OnPropertyChangedGenerator : IIncrementalGenerator
         return NamespaceDeclaration(ParseName(namespaceName)).AddMembers(classDeclaration);
     }
 
-    private static MemberDeclarationSyntax[] GenerateChangedMethod(IPropertySymbol propertySymbol)
-    {
-        var propertyName = propertySymbol.Name;
-        var propertyType = propertySymbol.Type.GetTypeSyntax();
-        var avaloniaPropertyChangedEventArgs = IdentifierName("global::Avalonia.AvaloniaPropertyChangedEventArgs");
 
-        return
-        [
-            MethodDeclaration(PredefinedType(Token(SyntaxKind.VoidKeyword)), $"On{propertyName}PropertyChanged")
-                .AddModifiers(Token(SyntaxKind.PartialKeyword))
-                .AddParameterListParameters(Parameter(Identifier("change")).WithType(avaloniaPropertyChangedEventArgs))
-                .WithSemicolonToken(Token(SyntaxKind.SemicolonToken)),
-            MethodDeclaration(PredefinedType(Token(SyntaxKind.VoidKeyword)), $"On{propertyName}PropertyChanged")
-                .AddModifiers(Token(SyntaxKind.PartialKeyword))
-                .AddParameterListParameters(Parameter(Identifier("newValue")).WithType(propertyType))
-                .WithSemicolonToken(Token(SyntaxKind.SemicolonToken)),
-            MethodDeclaration(PredefinedType(Token(SyntaxKind.VoidKeyword)), $"On{propertyName}PropertyChanged")
-                .AddModifiers(Token(SyntaxKind.PartialKeyword))
-                .AddParameterListParameters(
-                    Parameter(Identifier("oldValue")).WithType(propertyType),
-                    Parameter(Identifier("newValue")).WithType(propertyType))
-                .WithSemicolonToken(Token(SyntaxKind.SemicolonToken))
-        ];
-    }
-
-    private static MethodDeclarationSyntax GenerateOnPropertyChangedOverride(
+    private static MethodDeclarationSyntax GenerateOnPropertyChanged(
         ICollection<PropertyTuple> styledProperties,
         ICollection<PropertyTuple> directProperties)
     {
@@ -270,7 +245,23 @@ public class OnPropertyChangedGenerator : IIncrementalGenerator
                                 IdentifierName("OnPropertyChanged")))
                             .AddArgumentListArguments(Argument(changeIdentifier))),
                     SwitchStatement(propertyNameAccess)
-                        .AddSections(switchSections)))
+                        .AddSections(switchSections),
+                    ExpressionStatement(
+                        InvocationExpression(IdentifierName("OnPropertyChangedOverride"))
+                        .AddArgumentListArguments(Argument(changeIdentifier)))))
+            .AddAttributeLists(AttributeList(SingletonSeparatedList(GeneratedCodeAttribute())));
+    }
+   
+    private static MethodDeclarationSyntax GenerateOnPropertyChangedOverride()
+    {
+        return MethodDeclaration(
+                PredefinedType(Token(SyntaxKind.VoidKeyword)),
+                Identifier("OnPropertyChangedOverride"))
+            .AddModifiers(Token(SyntaxKind.PartialKeyword))
+            .AddParameterListParameters(
+                Parameter(Identifier("change"))
+                    .WithType(IdentifierName("global::Avalonia.AvaloniaPropertyChangedEventArgs")))
+            .WithSemicolonToken(Token(SyntaxKind.SemicolonToken))
             .AddAttributeLists(AttributeList(SingletonSeparatedList(GeneratedCodeAttribute())));
     }
 }
