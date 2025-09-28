@@ -136,8 +136,8 @@ protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs chang
             OnCountPropertyChanged((int)change.NewValue);
             OnCountPropertyChanged((int)change.OldValue, (int)change.NewValue);
             break;
-		OnPropertyChangedOverride(change);
     }
+	OnPropertyChangedOverride(change);
 }
 ```
 You can still handle all property changes by using `OnPropertyChangedOverride` method.
