@@ -63,7 +63,7 @@ public class StyledPropertyGenerator : IIncrementalGenerator
             foreach (var group in ctx.GroupBy<PropertyTuple, INamedTypeSymbol?>(p => p.PropertySymbol.ContainingType, SymbolEqualityComparer.Default))
             {
                 var containingClass = group.Key;
-                if (containingClass is null || !containingClass.InheritsFromFullyQualifiedMetadataName("Avalonia.StyledElement"))
+                if (containingClass is null || !containingClass.InheritsFromFullyQualifiedMetadataName("Avalonia.AvaloniaObject"))
                 {
                     continue;
                 }
