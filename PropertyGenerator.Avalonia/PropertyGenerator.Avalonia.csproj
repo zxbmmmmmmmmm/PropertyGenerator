@@ -12,7 +12,7 @@
         <Description>Auto generate StyledProperty for Avalonia applications</Description>
         <PackageProjectUrl>https://github.com/zxbmmmmmmmmm/PropertyGenerator</PackageProjectUrl>
         <PackageReadmeFile>readme.md</PackageReadmeFile>
-        <VersionPrefix>1.2.1</VersionPrefix>
+        <VersionPrefix>1.2.2</VersionPrefix>
         <RepositoryUrl>https://github.com/zxbmmmmmmmmm/PropertyGenerator</RepositoryUrl>
     </PropertyGroup>
 
