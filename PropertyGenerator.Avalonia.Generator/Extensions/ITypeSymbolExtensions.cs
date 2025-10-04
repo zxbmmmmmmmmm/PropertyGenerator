@@ -293,10 +293,7 @@ internal static class ITypeSymbolExtensions
 
     internal static TypeSyntax GetTypeSyntax(this ITypeSymbol typeSymbol)
     {
-        return SyntaxFactory.IdentifierName(typeSymbol.ToDisplayString(
-            typeSymbol.NullableAnnotation is NullableAnnotation.Annotated
-                ? NullableFlowState.MaybeNull
-                : NullableFlowState.NotNull));
+        return SyntaxFactory.IdentifierName(typeSymbol.GetFullyQualifiedNameWithNullabilityAnnotations());
     }
     internal static bool HasNullableAnnotation(this ITypeSymbol typeSymbol) => typeSymbol.NullableAnnotation is NullableAnnotation.Annotated;
 }

@@ -161,16 +161,12 @@ public class DirectPropertyGenerator : IIncrementalGenerator
     private static FieldDeclarationSyntax GenerateFieldDeclaration(Compilation compilation, INamedTypeSymbol classSymbol, IPropertySymbol propertySymbol, SemanticModel model)
     {
         var propertyName = propertySymbol.Name;
-        var className = classSymbol.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat);
+        var className = classSymbol.GetFullyQualifiedName();
         var directPropertySymbolName = compilation.GetTypeByMetadataName("Avalonia.DirectProperty`2")!
             .Construct(classSymbol, propertySymbol.Type)
-            .ToDisplayString(new SymbolDisplayFormat(
-                globalNamespaceStyle: SymbolDisplayGlobalNamespaceStyle.Included,
-                typeQualificationStyle: SymbolDisplayTypeQualificationStyle.NameAndContainingTypesAndNamespaces,
-                genericsOptions: SymbolDisplayGenericsOptions.IncludeTypeParameters,
-                miscellaneousOptions: SymbolDisplayMiscellaneousOptions.IncludeNullableReferenceTypeModifier));
+            .GetFullyQualifiedNameWithNullabilityAnnotations();
         var avaloniaPropertySymbolName = compilation.GetTypeByMetadataName("Avalonia.AvaloniaProperty")!
-            .ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+            .GetFullyQualifiedName();
         var attribute = propertySymbol.GetAttributes().First(p => p.AttributeClass!.ToDisplayString() == AttributeFullName);
 
         List<ArgumentSyntax> arguments =

@@ -45,6 +45,9 @@ public partial class MainWindow : Window
     {
         return true;
     }
+    [GeneratedStyledProperty]
+    public partial IEnumerable? Items1 { get; set; }
+
 
     [GeneratedDirectProperty]
     public partial IEnumerable? Items2 { get; set; }

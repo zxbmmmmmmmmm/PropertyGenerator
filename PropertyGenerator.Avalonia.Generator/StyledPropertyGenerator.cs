@@ -111,16 +111,11 @@ public class StyledPropertyGenerator : IIncrementalGenerator
     private static FieldDeclarationSyntax GenerateFieldDeclaration(Compilation compilation, INamedTypeSymbol classSymbol, IPropertySymbol propertySymbol, SemanticModel model)
     {
         var propertyName = propertySymbol.Name;
-        var className = classSymbol.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat);
+        var className = classSymbol.GetFullyQualifiedName();
         var styledPropertySymbolName = compilation.GetTypeByMetadataName("Avalonia.StyledProperty`1")!
-            .Construct(propertySymbol.Type)
-            .ToDisplayString(new SymbolDisplayFormat(
-                globalNamespaceStyle: SymbolDisplayGlobalNamespaceStyle.Included,
-                typeQualificationStyle: SymbolDisplayTypeQualificationStyle.NameAndContainingTypesAndNamespaces,
-                genericsOptions: SymbolDisplayGenericsOptions.IncludeTypeParameters,
-                miscellaneousOptions: SymbolDisplayMiscellaneousOptions.IncludeNullableReferenceTypeModifier));
-        var avaloniaPropertySymbolName = compilation.GetTypeByMetadataName("Avalonia.AvaloniaProperty")!
-            .ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+            .Construct(propertySymbol.Type).GetFullyQualifiedNameWithNullabilityAnnotations();
+        var avaloniaPropertySymbolName =
+            compilation.GetTypeByMetadataName("Avalonia.AvaloniaProperty")!.GetFullyQualifiedName();
         var attribute = propertySymbol.GetAttributes().FirstOrDefault(p => p.AttributeClass!.ToDisplayString() == AttributeFullName)!;
 
         var defaultValue = DefaultValueHelper.GetDefaultValue(
