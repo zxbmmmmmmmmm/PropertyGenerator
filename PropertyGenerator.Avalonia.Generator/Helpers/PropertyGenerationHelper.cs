@@ -12,10 +12,10 @@ internal class PropertyGenerationHelper
     public static PropertyDeclarationSyntax GeneratePropertyDeclaration(IPropertySymbol propertySymbol)
     {
         var propertyName = propertySymbol.Name;
-        var propertyType = propertySymbol.Type.ToDisplayString();
+        var propertyType = propertySymbol.Type;
 
         var propertyDeclaration =
-            PropertyDeclaration(ParseTypeName(propertyType), Identifier(propertyName))
+            PropertyDeclaration(propertyType.GetTypeSyntax(), Identifier(propertyName))
                 .AddModifiers([.. propertySymbol.DeclaredAccessibility.GetAccessibilityModifiers(), Token(SyntaxKind.PartialKeyword)]);
         if (propertySymbol.GetMethod is { } getMethod)
         {

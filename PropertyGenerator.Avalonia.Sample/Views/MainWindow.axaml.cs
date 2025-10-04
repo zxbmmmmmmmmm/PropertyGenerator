@@ -1,5 +1,6 @@
 using System.Collections;
 using Avalonia;
+using Avalonia.Animation.Easings;
 using Avalonia.Collections;
 using Avalonia.Controls;
 using Avalonia.Data;
@@ -48,6 +49,8 @@ public partial class MainWindow : Window
     [GeneratedStyledProperty]
     public partial IEnumerable? Items1 { get; set; }
 
+    [GeneratedStyledProperty]
+    public partial Easing Easing { get; set; }
 
     [GeneratedDirectProperty]
     public partial IEnumerable? Items2 { get; set; }
