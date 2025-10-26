@@ -117,18 +117,12 @@ public class DirectPropertyGenerator : IIncrementalGenerator
 
         var defaultValue = DefaultValueHelper.GetDefaultValue(attribute, propertySymbol, semanticModel, CancellationToken.None);
 
-        ExpressionSyntax? initializerExpression = null;
-        if (defaultValue is not AvaloniaPropertyDefaultValue.UnsetValue and not AvaloniaPropertyDefaultValue.Null)
+        var initializerExpression = defaultValue switch
         {
-            if (defaultValue is AvaloniaPropertyDefaultValue.Callback callback)
-            {
-                initializerExpression = InvocationExpression(IdentifierName(callback.MethodName));
-            }
-            else
-            {
-                initializerExpression = ParseExpression(defaultValue.ToString());
-            }
-        }
+            AvaloniaPropertyDefaultValue.Callback callback => InvocationExpression(IdentifierName(callback.MethodName)),
+            AvaloniaPropertyDefaultValue.Constant => ParseExpression(defaultValue.ToString()),
+            _ => null
+        };
 
         var propertyDeclaration = PropertyDeclaration(propertySymbol.Type.GetTypeSyntax(), Identifier(propertyName))
             .AddModifiers(propertySymbol.DeclaredAccessibility.GetAccessibilityModifiers())

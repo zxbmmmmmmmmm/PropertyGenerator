@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using Avalonia;
 using Avalonia.Animation.Easings;
 using Avalonia.Collections;
@@ -62,6 +63,11 @@ public partial class MainWindow : Window
     [GeneratedDirectProperty(Getter = nameof(Getter), Setter = nameof(Setter))]
     public partial IEnumerable? Items { get; set; }
 
+    [GeneratedDirectProperty(-1)]
+    public partial int Test { get; set; }
+
+    [GeneratedDirectProperty]
+    public partial List<int> Test2 { get; set; } = new List<int>();
     public static IEnumerable? Getter(MainWindow o) => o.Items;
     public static void Setter(MainWindow o, IEnumerable? v) => o.Items = v;
 }
