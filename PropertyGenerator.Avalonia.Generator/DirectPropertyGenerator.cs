@@ -130,32 +130,45 @@ public class DirectPropertyGenerator : IIncrementalGenerator
             }
         }
 
-        var property = PropertyDeclaration(propertySymbol.Type.GetTypeSyntax(), Identifier(propertyName))
+        var propertyDeclaration = PropertyDeclaration(propertySymbol.Type.GetTypeSyntax(), Identifier(propertyName))
             .AddModifiers(propertySymbol.DeclaredAccessibility.GetAccessibilityModifiers())
-            .AddModifiers(Token(SyntaxKind.PartialKeyword))
-            .AddAccessorListAccessors(
+            .AddModifiers(Token(SyntaxKind.PartialKeyword));
+
+        if (propertySymbol.GetMethod is { } getMethod)
+        {
+            var accessDeclaration =
                 AccessorDeclaration(SyntaxKind.GetAccessorDeclaration)
                     .WithExpressionBody(ArrowExpressionClause(IdentifierName("field")))
-                    .WithSemicolonToken(Token(SyntaxKind.SemicolonToken)),
-                AccessorDeclaration(SyntaxKind.SetAccessorDeclaration)
-                    .WithExpressionBody(ArrowExpressionClause(
-                        InvocationExpression(IdentifierName("SetAndRaise"))
-                            .AddArgumentListArguments(
-                                Argument(IdentifierName($"{propertyName}Property")),
-                                Argument(IdentifierName("field")).WithRefOrOutKeyword(Token(SyntaxKind.RefKeyword)),
-                                Argument(IdentifierName("value"))
-                            )
-                    ))
-                    .WithSemicolonToken(Token(SyntaxKind.SemicolonToken))
-            );
+                    .WithSemicolonToken(Token(SyntaxKind.SemicolonToken));
+            if (getMethod.DeclaredAccessibility != propertySymbol.DeclaredAccessibility)
+                accessDeclaration = accessDeclaration.AddModifiers([..getMethod.DeclaredAccessibility.GetAccessibilityModifiers()]);
+            propertyDeclaration = propertyDeclaration.AddAccessorListAccessors(accessDeclaration);
+        }
+
+        if (propertySymbol.SetMethod is { } setMethod)
+        {
+            var accessDeclaration = AccessorDeclaration(SyntaxKind.SetAccessorDeclaration)
+                .WithExpressionBody(ArrowExpressionClause(
+                    InvocationExpression(IdentifierName("SetAndRaise"))
+                        .AddArgumentListArguments(
+                            Argument(IdentifierName($"{propertyName}Property")),
+                            Argument(IdentifierName("field")).WithRefOrOutKeyword(Token(SyntaxKind.RefKeyword)),
+                            Argument(IdentifierName("value"))
+                        )
+                )).WithSemicolonToken(Token(SyntaxKind.SemicolonToken));
+            if (setMethod.DeclaredAccessibility != propertySymbol.DeclaredAccessibility)
+                accessDeclaration = accessDeclaration.AddModifiers([.. setMethod.DeclaredAccessibility.GetAccessibilityModifiers()]);
+            propertyDeclaration = propertyDeclaration.AddAccessorListAccessors(accessDeclaration);
+        }
+
 
         if (initializerExpression != null)
         {
-            property = property.WithInitializer(EqualsValueClause(initializerExpression))
+            propertyDeclaration = propertyDeclaration.WithInitializer(EqualsValueClause(initializerExpression))
                                .WithSemicolonToken(Token(SyntaxKind.SemicolonToken));
         }
 
-        return property;
+        return propertyDeclaration;
     }
 
     private static FieldDeclarationSyntax GenerateFieldDeclaration(Compilation compilation, INamedTypeSymbol classSymbol, IPropertySymbol propertySymbol, SemanticModel model)

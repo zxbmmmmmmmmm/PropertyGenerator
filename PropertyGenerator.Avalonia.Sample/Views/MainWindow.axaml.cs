@@ -21,6 +21,9 @@ public partial class MainWindow : Window
     [GeneratedStyledProperty(114514)]
     internal partial int Count { get; private set; }
 
+    [GeneratedDirectProperty(114514)]
+    internal partial int Count1 { get; private set; }
+
     /// <summary>
     /// AAA
     /// </summary>
