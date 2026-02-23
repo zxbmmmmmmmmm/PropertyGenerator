@@ -9,6 +9,7 @@ using Avalonia.Data;
 namespace PropertyGenerator.Avalonia.Sample.Views;
 
 [GenerateOnPropertyChanged(nameof(Width))]
+[GeneratedAttachedProperty<AvaloniaObject, string>("TestProp")]
 public partial class MainWindow : Window
 {
     public MainWindow()

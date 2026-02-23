@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Text;
@@ -19,7 +20,7 @@ namespace PropertyGenerator.Avalonia.Generator;
 [Generator]
 public class AttachedPropertyGenerator : IIncrementalGenerator
 {
-    private const string AttributeFullName = "PropertyGenerator.Avalonia.GeneratedAttachedPropertyAttribute";
+    private const string AttributeFullName = "PropertyGenerator.Avalonia.GeneratedAttachedPropertyAttribute`2";
 
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
@@ -28,8 +29,7 @@ public class AttachedPropertyGenerator : IIncrementalGenerator
                 predicate: (node, _) => node is ClassDeclarationSyntax classNode &&
                                         classNode.Modifiers.Any(SyntaxKind.PartialKeyword),
                 transform: (ctx, _) => ctx.TargetSymbol)
-            .Where(ctx => ctx.ContainingType is not null);
-        ;
+            .Where(owner => owner is not null);
 
         var compilationAndOwnerTypes = context.CompilationProvider.Combine(ownerTypes.Collect());
 
@@ -346,7 +346,7 @@ public class AttachedPropertyGenerator : IIncrementalGenerator
         var registerInvocation = GenerateRegisterAttachedInvocation(compilation, ownerType, attachedProperty, token);
 
         return MethodDeclaration(IdentifierName(attachedPropertyTypeName),
-                Identifier($"Register{propertyName}PropertyChangedHandler"))
+                Identifier($"Register{propertyName}Property"))
             .AddModifiers(Token(SyntaxKind.PrivateKeyword), Token(SyntaxKind.StaticKeyword))
             .WithBody(Block(GenerateBlockStatements()))
             .AddAttributeLists(AttributeList(SingletonSeparatedList(GeneratedCodeAttribute())));
