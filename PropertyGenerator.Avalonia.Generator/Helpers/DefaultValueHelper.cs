@@ -14,16 +14,17 @@ internal static class DefaultValueHelper
         AttributeData attributeData,
         IPropertySymbol propertySymbol,
         SemanticModel semanticModel,
-        CancellationToken token)
+        CancellationToken token
+    )
     {
         // First, check if we have a callback
         if (attributeData.TryGetNamedArgument("DefaultValueCallback", out var defaultValueCallback))
         {
             if (defaultValueCallback is { Type.SpecialType: SpecialType.System_String, Value: string { Length: > 0 } methodName })
             {
-                if (TryFindDefaultValueCallbackMethod(propertySymbol, methodName, out var methodSymbol))
+                if (TryFindDefaultValueCallbackMethod(propertySymbol.ContainingType, methodName, out var methodSymbol))
                 {
-                    if (IsDefaultValueCallbackValid(propertySymbol, methodSymbol))
+                    if (IsDefaultValueCallbackValid(propertySymbol.Type, methodSymbol))
                     {
                         return new AvaloniaPropertyDefaultValue.Callback(methodName);
                     }
@@ -74,9 +75,61 @@ internal static class DefaultValueHelper
         return AvaloniaPropertyDefaultValue.Null.Instance;
     }
 
-    public static bool TryFindDefaultValueCallbackMethod(IPropertySymbol propertySymbol, string methodName, [NotNullWhen(true)] out IMethodSymbol? methodSymbol)
+    /// <remarks>
+    /// Used by AttachedPropertyGenerator
+    /// </remarks>
+    /// <param name="attributeData"></param>
+    /// <param name="containingType"></param>
+    /// <param name="propertyType"></param>
+    /// <param name="token"></param>
+    /// <returns></returns>
+    public static AvaloniaPropertyDefaultValue GetDefaultValue(
+        AttributeData attributeData,
+        INamedTypeSymbol containingType,
+        ITypeSymbol propertyType,
+        CancellationToken token
+    )
     {
-        var memberSymbols = propertySymbol.ContainingType!.GetMembers(methodName);
+        if (attributeData.TryGetNamedArgument("DefaultValueCallback", out var defaultValueCallback))
+        {
+            if (defaultValueCallback is { Type.SpecialType: SpecialType.System_String, Value: string { Length: > 0 } methodName })
+            {
+                if (TryFindDefaultValueCallbackMethod(containingType, methodName, out var methodSymbol))
+                {
+                    if (IsDefaultValueCallbackValid(propertyType, methodSymbol))
+                    {
+                        return new AvaloniaPropertyDefaultValue.Callback(methodName);
+                    }
+                }
+            }
+
+            return AvaloniaPropertyDefaultValue.Null.Instance;
+        }
+
+        token.ThrowIfCancellationRequested();
+        var hasDefaultValue = attributeData.TryGetNamedArgument("DefaultValue", out var defaultValue);
+
+        if (hasDefaultValue)
+        {
+            if (!defaultValue.IsNull)
+            {
+                return new AvaloniaPropertyDefaultValue.Constant(TypedConstantInfo.Create(defaultValue));
+            }
+
+            return AvaloniaPropertyDefaultValue.Null.Instance;
+        }
+
+        if (!propertyType.IsDefaultValueNull())
+        {
+            return new AvaloniaPropertyDefaultValue.Default(propertyType.GetFullyQualifiedName());
+        }
+
+        return AvaloniaPropertyDefaultValue.Null.Instance;
+    }
+
+    public static bool TryFindDefaultValueCallbackMethod(ITypeSymbol propertySymbol, string methodName, [NotNullWhen(true)] out IMethodSymbol? methodSymbol)
+    {
+        var memberSymbols = propertySymbol.GetMembers(methodName);
         foreach (var member in memberSymbols)
         {
             if (member is IMethodSymbol candidateSymbol && candidateSymbol.Name == methodName)
@@ -89,7 +142,7 @@ internal static class DefaultValueHelper
         return false;
     }
 
-    public static bool IsDefaultValueCallbackValid(IPropertySymbol propertySymbol, IMethodSymbol methodSymbol)
+    public static bool IsDefaultValueCallbackValid(ITypeSymbol typeSymbol, IMethodSymbol methodSymbol)
     {
         if (methodSymbol is not { IsStatic: true, Parameters: [], ExplicitInterfaceImplementations: [] })
         {
@@ -97,11 +150,11 @@ internal static class DefaultValueHelper
         }
 
         if (methodSymbol.ReturnType.SpecialType is SpecialType.System_Object ||
-            SymbolEqualityComparer.Default.Equals(propertySymbol.Type, methodSymbol.ReturnType))
+            SymbolEqualityComparer.Default.Equals(typeSymbol, methodSymbol.ReturnType))
         {
             return true;
         }
 
-        return propertySymbol.Type.IsNullableValueTypeWithUnderlyingType(methodSymbol.ReturnType);
+        return typeSymbol.IsNullableValueTypeWithUnderlyingType(methodSymbol.ReturnType);
     }
 }
