@@ -7,8 +7,6 @@ using Avalonia;
 
 namespace PropertyGenerator.Avalonia.Sample.Views;
 
-public class TestDiagnostics
-{
     // ===== Attached Property Diagnostics =====
 
     // PGA1006: Invalid attached property names
@@ -171,4 +169,3 @@ public class TestDiagnostics
     public partial class TestOnChangedDisabled : AvaloniaObject
     {
     }
-}
