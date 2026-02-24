@@ -26,8 +26,7 @@ public class AttachedPropertyGenerator : IIncrementalGenerator
     {
         var ownerTypes = context.ForAttributeWithMetadataNameAndOptions(
                 AttributeFullName,
-                predicate: (node, _) => node is ClassDeclarationSyntax classNode &&
-                                        classNode.Modifiers.Any(SyntaxKind.PartialKeyword),
+                predicate: (node, _) => node is ClassDeclarationSyntax classNode,
                 transform: (ctx, _) => ctx.TargetSymbol)
             .Where(owner => owner is not null);
 
@@ -52,6 +51,18 @@ public class AttachedPropertyGenerator : IIncrementalGenerator
 
             foreach (var ownerType in distinctOwnerTypes)
             {
+                // Check if the containing class is partial
+                if (!ownerType.DeclaringSyntaxReferences
+                        .Any(r => r.GetSyntax() is ClassDeclarationSyntax cls &&
+                                  cls.Modifiers.Any(SyntaxKind.PartialKeyword)))
+                {
+                    spc.ReportDiagnostic(Diagnostic.Create(
+                        GeneratorDiagnostics.ContainingTypeMustBePartial,
+                        ownerType.Locations.FirstOrDefault(),
+                        ownerType.Name, "GeneratedAttachedPropertyAttribute"));
+                    continue;
+                }
+
                 var attributes = ownerType.GetAttributes().Where(IsAttachedPropertyAttribute).ToList();
                 if (attributes.Count == 0)
                 {
@@ -67,6 +78,10 @@ public class AttachedPropertyGenerator : IIncrementalGenerator
                         string.IsNullOrWhiteSpace(name) ||
                         !SyntaxFacts.IsValidIdentifier(name))
                     {
+                        spc.ReportDiagnostic(Diagnostic.Create(
+                            GeneratorDiagnostics.InvalidAttachedPropertyName,
+                            attribute.ApplicationSyntaxReference?.GetSyntax().GetLocation(),
+                            name ?? ""));
                         continue;
                     }
 
@@ -77,16 +92,10 @@ public class AttachedPropertyGenerator : IIncrementalGenerator
                         continue;
                     }
 
-                    if (!IsAvaloniaObject(hostType))
-                    {
-                        continue;
-                    }
-
-
                     candidates.Add(new AttachedPropertyCandidate(attribute, name, hostType, valueType));
                 }
 
-                var sourceCode = GenerateClassSource(compilation, ownerType, DistinctByName(candidates));
+                var sourceCode = GenerateClassSource(compilation, ownerType, DistinctByName(spc, candidates));
 
                 spc.AddSource(
                     $"{ownerType.ContainingNamespace.ToDisplayString()}.{ownerType.Name}.Attached.g.cs",
@@ -94,6 +103,7 @@ public class AttachedPropertyGenerator : IIncrementalGenerator
                 continue;
 
                 static IEnumerable<AttachedPropertyCandidate> DistinctByName(
+                    SourceProductionContext spc,
                     IEnumerable<AttachedPropertyCandidate> source
                 )
                 {
@@ -104,6 +114,14 @@ public class AttachedPropertyGenerator : IIncrementalGenerator
                         if (seenKeys.Add(element.Name))
                         {
                             yield return element;
+                        }
+                        else
+                        {
+                            spc.ReportDiagnostic(Diagnostic.Create(
+                                GeneratorDiagnostics.DuplicateAttachedPropertyName,
+                                element.Attribute.ApplicationSyntaxReference?.GetSyntax().GetLocation(),
+                                element.Name, element.HostType.Name
+                            ));
                         }
                     }
                 }

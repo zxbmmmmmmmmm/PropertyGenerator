@@ -125,3 +125,21 @@ public partial class TestAttachedPropertyWithoutOnChanged : AvaloniaObject
 public partial class TestAttachedPropertyInvalidNames : AvaloniaObject
 {
 }
+
+[GeneratedAttachedProperty<TestNonAvaloniaObject, string>("SilentAttachedText", DefaultValue = "silent")]
+public partial class TestNonAvaloniaObject
+{
+}
+
+[GeneratedAttachedProperty<AvaloniaObject, string>("SilentAttachedText", DefaultValue = "silent")]
+[GeneratedAttachedProperty<AvaloniaObject, string>("SilentAttachedText", DefaultValue = "silent")]
+public partial class TestDuplicated
+{
+}
+
+[GeneratedAttachedProperty<AvaloniaObject, string>("SilentAttachedText", DefaultValue = "silent")]
+public class TestNoPartial
+{
+}
+
+
