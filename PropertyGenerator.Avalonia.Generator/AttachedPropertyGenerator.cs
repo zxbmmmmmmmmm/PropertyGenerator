@@ -157,8 +157,7 @@ public class AttachedPropertyGenerator : IIncrementalGenerator
             {
                 classDeclaration = classDeclaration.AddMembers(GenerateChangedMethodDeclaration(prop),
                     GenerateChangedMethodWithOldValueDeclaration(prop),
-                    GenerateChangedMethodWithArgsDeclaration(prop),
-                    GenerateChangedMethodForwarder(prop));
+                    GenerateChangedMethodWithArgsDeclaration(prop));
             }
         }
 
@@ -280,11 +279,9 @@ public class AttachedPropertyGenerator : IIncrementalGenerator
             .AddAttributeLists(AttributeList(SingletonSeparatedList(GeneratedCodeAttribute())));
     }
 
-    private static MethodDeclarationSyntax GenerateChangedMethodForwarder(AttachedPropertyCandidate attachedProperty)
+    private static ParenthesizedLambdaExpressionSyntax GenerateChangedMethodForwarder(AttachedPropertyCandidate attachedProperty)
     {
         var valueTypeSyntax = attachedProperty.ValueType.GetTypeSyntax();
-        var propertyName = attachedProperty.Name;
-
         var changeIdentifier = IdentifierName("change");
         var oldValueAccess = MemberAccessExpression(
             SyntaxKind.SimpleMemberAccessExpression,
@@ -304,32 +301,32 @@ public class AttachedPropertyGenerator : IIncrementalGenerator
             ? CastExpression(valueTypeSyntax, SuppressNullableWarningExpression(newValueAccess))
             : CastExpression(valueTypeSyntax, newValueAccess);
 
-        return MethodDeclaration(PredefinedType(Token(SyntaxKind.VoidKeyword)),
-                Identifier($"On{propertyName}PropertyChangedGenerated"))
-            .AddModifiers(Token(SyntaxKind.PrivateKeyword), Token(SyntaxKind.StaticKeyword))
-            .AddParameterListParameters(
-                Parameter(Identifier("host")).WithType(attachedProperty.HostType.GetTypeSyntax()),
-                Parameter(Identifier("change"))
-                    .WithType(IdentifierName("global::Avalonia.AvaloniaPropertyChangedEventArgs")))
-            .WithBody(
+        return ParenthesizedLambdaExpression(
                 Block(
                     ExpressionStatement(
-                        InvocationExpression(IdentifierName($"On{propertyName}PropertyChanged"))
+                        InvocationExpression(
+                                IdentifierName($"On{attachedProperty.Name}PropertyChanged"))
                             .AddArgumentListArguments(
                                 Argument(IdentifierName("host")),
                                 Argument(changeIdentifier))),
                     ExpressionStatement(
-                        InvocationExpression(IdentifierName($"On{propertyName}PropertyChanged"))
+                        InvocationExpression(
+                                IdentifierName($"On{attachedProperty.Name}PropertyChanged"))
                             .AddArgumentListArguments(
                                 Argument(IdentifierName("host")),
                                 Argument(newValueExpression))),
                     ExpressionStatement(
-                        InvocationExpression(IdentifierName($"On{propertyName}PropertyChanged"))
+                        InvocationExpression(
+                                IdentifierName($"On{attachedProperty.Name}PropertyChanged"))
                             .AddArgumentListArguments(
                                 Argument(IdentifierName("host")),
                                 Argument(oldValueExpression),
                                 Argument(newValueExpression)))))
-            .AddAttributeLists(AttributeList(SingletonSeparatedList(GeneratedCodeAttribute())));
+            .WithParameterList(
+                ParameterList(SeparatedList<ParameterSyntax>([
+                    Parameter(Identifier("host")),
+                    Parameter(Identifier("change"))
+                ])));
     }
 
     private static MethodDeclarationSyntax GenerateRegistrationMethod(
@@ -373,7 +370,7 @@ public class AttachedPropertyGenerator : IIncrementalGenerator
                                     SyntaxKind.SimpleMemberAccessExpression,
                                     IdentifierName("property"),
                                     IdentifierName("Changed"))),
-                            Argument(IdentifierName($"On{propertyName}PropertyChangedGenerated"))));
+                            Argument(GenerateChangedMethodForwarder(attachedProperty))));
 
             yield return ReturnStatement(IdentifierName("property"));
         }

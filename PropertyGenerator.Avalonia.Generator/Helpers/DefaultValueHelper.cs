@@ -22,7 +22,7 @@ internal static class DefaultValueHelper
         {
             if (defaultValueCallback is { Type.SpecialType: SpecialType.System_String, Value: string { Length: > 0 } methodName })
             {
-                if (TryFindDefaultValueCallbackMethod(propertySymbol, methodName, out var methodSymbol))
+                if (TryFindDefaultValueCallbackMethod(propertySymbol.Type, methodName, out var methodSymbol))
                 {
                     if (IsDefaultValueCallbackValid(propertySymbol.Type, methodSymbol))
                     {
@@ -127,9 +127,9 @@ internal static class DefaultValueHelper
         return AvaloniaPropertyDefaultValue.Null.Instance;
     }
 
-    public static bool TryFindDefaultValueCallbackMethod(ISymbol propertySymbol, string methodName, [NotNullWhen(true)] out IMethodSymbol? methodSymbol)
+    public static bool TryFindDefaultValueCallbackMethod(ITypeSymbol propertySymbol, string methodName, [NotNullWhen(true)] out IMethodSymbol? methodSymbol)
     {
-        var memberSymbols = propertySymbol.ContainingType!.GetMembers(methodName);
+        var memberSymbols = propertySymbol.GetMembers(methodName);
         foreach (var member in memberSymbols)
         {
             if (member is IMethodSymbol candidateSymbol && candidateSymbol.Name == methodName)
