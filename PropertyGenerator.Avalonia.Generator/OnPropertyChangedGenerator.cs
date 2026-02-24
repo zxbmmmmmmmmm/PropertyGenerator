@@ -135,7 +135,11 @@ public class OnPropertyChangedGenerator : IIncrementalGenerator
             foreach (var group in generationTargets.GroupBy<GenerationTargetTuple, INamedTypeSymbol?>(p => p.TargetClass, SymbolEqualityComparer.Default))
             {
                 var containingClass = group.Key;
-                if (containingClass is null || !containingClass.InheritsFromFullyQualifiedMetadataName("Avalonia.AvaloniaObject"))
+                if (containingClass is null
+                    || !containingClass.InheritsFromFullyQualifiedMetadataName("Avalonia.AvaloniaObject")
+                    || !containingClass.DeclaringSyntaxReferences
+                        .Any(r => r.GetSyntax() is ClassDeclarationSyntax cls
+                                  && cls.Modifiers.Any(SyntaxKind.PartialKeyword)))
                 {
                     continue;
                 }
