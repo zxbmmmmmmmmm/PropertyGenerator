@@ -42,63 +42,26 @@ public class StyledPropertyGenerator : IIncrementalGenerator
             {
                 var containingClass = group.Key;
                 if (containingClass is null)
-                {
                     continue;
-                }
 
-                // Check if all containing types are partial
-                if (!containingClass.DeclaringSyntaxReferences
-                        .Any(r => r.GetSyntax() is ClassDeclarationSyntax cls &&
-                                  cls.Modifiers.Any(SyntaxKind.PartialKeyword)))
-                {
-                    spc.ReportDiagnostic(Diagnostic.Create(
-                        GeneratorDiagnostics.ContainingTypeMustBePartial,
-                        containingClass.Locations.FirstOrDefault(),
-                        containingClass.Name, "GeneratedStyledPropertyAttribute"));
+                if (!DiagnosticHelper.CheckContainingTypeIsPartial(spc, containingClass, "GeneratedStyledPropertyAttribute"))
                     continue;
-                }
 
-                // Check if the containing class inherits from AvaloniaObject
-                if (!containingClass.InheritsFromFullyQualifiedMetadataName("Avalonia.AvaloniaObject"))
-                {
-                    spc.ReportDiagnostic(Diagnostic.Create(
-                        GeneratorDiagnostics.TypeMustInheritAvaloniaObject,
-                        containingClass.Locations.FirstOrDefault(),
-                        containingClass.Name, "GeneratedStyledPropertyAttribute"));
+                if (!DiagnosticHelper.CheckInheritsAvaloniaObject(spc, containingClass, "GeneratedStyledPropertyAttribute"))
                     continue;
-                }
 
                 var validProperties = new List<PropertyTuple>();
                 foreach (var (property, model) in group)
                 {
-                    var propertySyntax = (PropertyDeclarationSyntax) property.DeclaringSyntaxReferences[0].GetSyntax();
-
-                    if (!propertySyntax.Modifiers.Any(SyntaxKind.PartialKeyword))
-                    {
-                        spc.ReportDiagnostic(Diagnostic.Create(
-                            GeneratorDiagnostics.InvalidPropertyDeclaration,
-                            property.Locations.FirstOrDefault(),
-                            property.Name, "GeneratedStyledPropertyAttribute", "property must be partial"));
+                    if (!DiagnosticHelper.CheckPropertyDeclaration(spc, property, "GeneratedStyledPropertyAttribute"))
                         continue;
-                    }
 
-                    if (propertySyntax.Modifiers.Any(SyntaxKind.StaticKeyword))
-                    {
-                        spc.ReportDiagnostic(Diagnostic.Create(
-                            GeneratorDiagnostics.InvalidPropertyDeclaration,
-                            property.Locations.FirstOrDefault(),
-                            property.Name, "GeneratedStyledPropertyAttribute", "property must not be static"));
+                    var attribute = property.GetAttributes().FirstOrDefault(a => a.AttributeClass?.ToDisplayString() == AttributeFullName);
+                    if (attribute is null)
                         continue;
-                    }
 
-                    if (propertySyntax.Type.IsKind(SyntaxKind.RefType))
-                    {
-                        spc.ReportDiagnostic(Diagnostic.Create(
-                            GeneratorDiagnostics.InvalidPropertyDeclaration,
-                            property.Locations.FirstOrDefault(),
-                            property.Name, "GeneratedStyledPropertyAttribute", "property must not be ref-returning"));
+                    if (!DiagnosticHelper.CheckStyledPropertyMethodReferences(spc, containingClass, property, attribute))
                         continue;
-                    }
 
                     validProperties.Add((property, model));
                 }

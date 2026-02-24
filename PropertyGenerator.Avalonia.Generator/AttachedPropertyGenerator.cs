@@ -52,16 +52,8 @@ public class AttachedPropertyGenerator : IIncrementalGenerator
             foreach (var ownerType in distinctOwnerTypes)
             {
                 // Check if the containing class is partial
-                if (!ownerType.DeclaringSyntaxReferences
-                        .Any(r => r.GetSyntax() is ClassDeclarationSyntax cls &&
-                                  cls.Modifiers.Any(SyntaxKind.PartialKeyword)))
-                {
-                    spc.ReportDiagnostic(Diagnostic.Create(
-                        GeneratorDiagnostics.ContainingTypeMustBePartial,
-                        ownerType.Locations.FirstOrDefault(),
-                        ownerType.Name, "GeneratedAttachedPropertyAttribute"));
+                if (!DiagnosticHelper.CheckContainingTypeIsPartial(spc, ownerType, "GeneratedAttachedPropertyAttribute"))
                     continue;
-                }
 
                 var attributes = ownerType.GetAttributes().Where(IsAttachedPropertyAttribute).ToList();
                 if (attributes.Count == 0)

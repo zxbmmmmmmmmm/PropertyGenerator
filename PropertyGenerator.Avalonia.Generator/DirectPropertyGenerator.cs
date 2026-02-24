@@ -43,63 +43,26 @@ public class DirectPropertyGenerator : IIncrementalGenerator
             {
                 var containingClass = group.Key;
                 if (containingClass is null)
-                {
                     continue;
-                }
 
-                // Check if all containing types are partial
-                if (!containingClass.DeclaringSyntaxReferences
-                        .Any(r => r.GetSyntax() is ClassDeclarationSyntax cls &&
-                                  cls.Modifiers.Any(SyntaxKind.PartialKeyword)))
-                {
-                    spc.ReportDiagnostic(Diagnostic.Create(
-                        GeneratorDiagnostics.ContainingTypeMustBePartial,
-                        containingClass.Locations.FirstOrDefault(),
-                        containingClass.Name, "GeneratedDirectPropertyAttribute"));
+                if (!DiagnosticHelper.CheckContainingTypeIsPartial(spc, containingClass, "GeneratedDirectPropertyAttribute"))
                     continue;
-                }
 
-                // Check if the containing class inherits from AvaloniaObject
-                if (!containingClass.InheritsFromFullyQualifiedMetadataName("Avalonia.AvaloniaObject"))
-                {
-                    spc.ReportDiagnostic(Diagnostic.Create(
-                        GeneratorDiagnostics.TypeMustInheritAvaloniaObject,
-                        containingClass.Locations.FirstOrDefault(),
-                        containingClass.Name, "GeneratedDirectPropertyAttribute"));
+                if (!DiagnosticHelper.CheckInheritsAvaloniaObject(spc, containingClass, "GeneratedDirectPropertyAttribute"))
                     continue;
-                }
 
                 var validProperties = new List<PropertyTuple>();
                 foreach (var (property, model) in group)
                 {
-                    var propertySyntax = (PropertyDeclarationSyntax) property.DeclaringSyntaxReferences[0].GetSyntax();
-
-                    if (!propertySyntax.Modifiers.Any(SyntaxKind.PartialKeyword))
-                    {
-                        spc.ReportDiagnostic(Diagnostic.Create(
-                            GeneratorDiagnostics.InvalidPropertyDeclaration,
-                            property.Locations.FirstOrDefault(),
-                            property.Name, "GeneratedDirectPropertyAttribute", "property must be partial"));
+                    if (!DiagnosticHelper.CheckPropertyDeclaration(spc, property, "GeneratedDirectPropertyAttribute"))
                         continue;
-                    }
 
-                    if (propertySyntax.Modifiers.Any(SyntaxKind.StaticKeyword))
-                    {
-                        spc.ReportDiagnostic(Diagnostic.Create(
-                            GeneratorDiagnostics.InvalidPropertyDeclaration,
-                            property.Locations.FirstOrDefault(),
-                            property.Name, "GeneratedDirectPropertyAttribute", "property must not be static"));
+                    var attribute = property.GetAttributes().FirstOrDefault(a => a.AttributeClass?.ToDisplayString() == AttributeFullName);
+                    if (attribute is null)
                         continue;
-                    }
 
-                    if (propertySyntax.Type.IsKind(SyntaxKind.RefType))
-                    {
-                        spc.ReportDiagnostic(Diagnostic.Create(
-                            GeneratorDiagnostics.InvalidPropertyDeclaration,
-                            property.Locations.FirstOrDefault(),
-                            property.Name, "GeneratedDirectPropertyAttribute", "property must not be ref-returning"));
+                    if (!DiagnosticHelper.CheckDirectPropertyMethodReferences(spc, containingClass, property, attribute))
                         continue;
-                    }
 
                     validProperties.Add((property, model));
                 }
