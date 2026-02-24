@@ -77,7 +77,7 @@ public class AttachedPropertyGenerator : IIncrementalGenerator
                         continue;
                     }
 
-                    if (IsAvaloniaObject(hostType))
+                    if (!IsAvaloniaObject(hostType))
                     {
                         continue;
                     }
@@ -460,7 +460,8 @@ public class AttachedPropertyGenerator : IIncrementalGenerator
     }
 
     private static bool IsAvaloniaObject(INamedTypeSymbol ownerType) =>
-        ownerType.InheritsFromFullyQualifiedMetadataName("Avalonia.AvaloniaObject");
+        ownerType.InheritsFromFullyQualifiedMetadataName("Avalonia.AvaloniaObject")
+        || ownerType.HasFullyQualifiedMetadataName("Avalonia.AvaloniaObject");
 
     private static bool IsAttachedPropertyAttribute(AttributeData attributeData)
     {
