@@ -25,17 +25,7 @@ public class DirectPropertyGenerator : IIncrementalGenerator
     {
         var propertySymbols = context.ForAttributeWithMetadataNameAndOptions(
                 AttributeFullName,
-                predicate: (node, _) =>
-                {
-                    // Initial check that's identical to the analyzer
-                    if (!node.IsValidPropertyDeclaration())
-                    {
-                        return false;
-                    }
-
-                    // Here we can also easily filter out ref-returning properties just using syntax
-                    return !((PropertyDeclarationSyntax) node).Type.IsKind(SyntaxKind.RefType);
-                },
+                predicate: (node, _) => node is PropertyDeclarationSyntax,
                 transform: (ctx, _) => (PropertySymbol: (IPropertySymbol) ctx.TargetSymbol, ctx.SemanticModel))
             .Where(ctx => ctx.PropertySymbol.ContainingType is not null);
 
@@ -79,7 +69,45 @@ public class DirectPropertyGenerator : IIncrementalGenerator
                     continue;
                 }
 
-                var sourceCode = GenerateClassSource(compilation, containingClass, [.. group]);
+                var validProperties = new List<PropertyTuple>();
+                foreach (var (property, model) in group)
+                {
+                    var propertySyntax = (PropertyDeclarationSyntax) property.DeclaringSyntaxReferences[0].GetSyntax();
+
+                    if (!propertySyntax.Modifiers.Any(SyntaxKind.PartialKeyword))
+                    {
+                        spc.ReportDiagnostic(Diagnostic.Create(
+                            GeneratorDiagnostics.InvalidPropertyDeclaration,
+                            property.Locations.FirstOrDefault(),
+                            property.Name, "GeneratedDirectPropertyAttribute", "property must be partial"));
+                        continue;
+                    }
+
+                    if (propertySyntax.Modifiers.Any(SyntaxKind.StaticKeyword))
+                    {
+                        spc.ReportDiagnostic(Diagnostic.Create(
+                            GeneratorDiagnostics.InvalidPropertyDeclaration,
+                            property.Locations.FirstOrDefault(),
+                            property.Name, "GeneratedDirectPropertyAttribute", "property must not be static"));
+                        continue;
+                    }
+
+                    if (propertySyntax.Type.IsKind(SyntaxKind.RefType))
+                    {
+                        spc.ReportDiagnostic(Diagnostic.Create(
+                            GeneratorDiagnostics.InvalidPropertyDeclaration,
+                            property.Locations.FirstOrDefault(),
+                            property.Name, "GeneratedDirectPropertyAttribute", "property must not be ref-returning"));
+                        continue;
+                    }
+
+                    validProperties.Add((property, model));
+                }
+
+                if (validProperties.Count == 0)
+                    continue;
+
+                var sourceCode = GenerateClassSource(compilation, containingClass, validProperties);
                 spc.AddSource($"{containingClass.ContainingNamespace.ToDisplayString()}.{containingClass.Name}.Direct.g.cs",
                     SourceText.From(sourceCode, Encoding.UTF8));
             }
