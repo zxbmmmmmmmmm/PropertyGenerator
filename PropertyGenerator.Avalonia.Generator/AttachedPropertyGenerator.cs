@@ -148,9 +148,7 @@ public class AttachedPropertyGenerator : IIncrementalGenerator
                 GenerateFieldDeclaration(compilation, prop),
                 GenerateGetMethodDeclaration(prop),
                 GenerateSetMethodDeclaration(prop),
-                GenerateRegistrationMethod(compilation, ownerType, prop, generateOnPropertyChanged,
-                    CancellationToken.None)
-                // TODO: pass ct
+                GenerateRegistrationMethod(compilation, ownerType, prop, generateOnPropertyChanged)
             );
 
             if (generateOnPropertyChanged)
@@ -333,14 +331,13 @@ public class AttachedPropertyGenerator : IIncrementalGenerator
         Compilation compilation,
         INamedTypeSymbol ownerType,
         AttachedPropertyCandidate attachedProperty,
-        bool generateOnPropertyChanged,
-        CancellationToken token
+        bool generateOnPropertyChanged
     )
     {
         var propertyName = attachedProperty.Name;
         var attachedPropertyTypeName = compilation.GetTypeByMetadataName("Avalonia.AttachedProperty`1")!
             .Construct(attachedProperty.ValueType).GetFullyQualifiedNameWithNullabilityAnnotations();
-        var registerInvocation = GenerateRegisterAttachedInvocation(compilation, ownerType, attachedProperty, token);
+        var registerInvocation = GenerateRegisterAttachedInvocation(compilation, ownerType, attachedProperty);
 
         return MethodDeclaration(IdentifierName(attachedPropertyTypeName),
                 Identifier($"Register{propertyName}Property"))
@@ -379,16 +376,14 @@ public class AttachedPropertyGenerator : IIncrementalGenerator
     private static InvocationExpressionSyntax GenerateRegisterAttachedInvocation(
         Compilation compilation,
         INamedTypeSymbol ownerType,
-        AttachedPropertyCandidate attachedProperty,
-        CancellationToken token
+        AttachedPropertyCandidate attachedProperty
     )
     {
         var ownerTypeName = ownerType.GetFullyQualifiedName();
         var avaloniaPropertySymbolName = compilation.GetTypeByMetadataName("Avalonia.AvaloniaProperty")!
             .GetFullyQualifiedName();
         var defaultValue =
-            DefaultValueHelper.GetDefaultValue(attachedProperty.Attribute, ownerType, attachedProperty.ValueType,
-                token);
+            DefaultValueHelper.GetDefaultValue(attachedProperty.Attribute, ownerType, attachedProperty.ValueType, CancellationToken.None);
         var propertyName = attachedProperty.Name;
 
         List<ArgumentSyntax> arguments =
