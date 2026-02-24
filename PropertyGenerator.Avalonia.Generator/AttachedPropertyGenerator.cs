@@ -421,12 +421,6 @@ public class AttachedPropertyGenerator : IIncrementalGenerator
                 .WithNameColon(NameColon(IdentifierName("coerce"))));
         }
 
-        if (attachedProperty.Attribute.TryGetNamedArgument("EnableDataValidation", out var enableDataValidation))
-        {
-            arguments.Add(Argument(IdentifierName(enableDataValidation.Value!.ToString().ToLower()))
-                .WithNameColon(NameColon(IdentifierName("enableDataValidation"))));
-        }
-
         if (attachedProperty.Attribute.TryGetNamedArgument("Inherits", out var inherits))
         {
             arguments.Add(Argument(IdentifierName(inherits.Value!.ToString().ToLower()))

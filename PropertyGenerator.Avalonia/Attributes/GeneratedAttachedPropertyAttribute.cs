@@ -22,8 +22,6 @@ public sealed class GeneratedAttachedPropertyAttribute<THost, TValue> : Attribut
 
     public string? Coerce { get; set; }
 
-    public bool EnableDataValidation { get; set; }
-
     public GeneratedAttachedPropertyAttribute(string name)
     {
         Name = name;
