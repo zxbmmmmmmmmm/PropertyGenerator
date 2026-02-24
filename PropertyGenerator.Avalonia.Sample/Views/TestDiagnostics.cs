@@ -156,4 +156,19 @@ public class TestDiagnostics
         [GeneratedDirectProperty(Coerce = "NonExistentCoerce")]
         public partial int Value { get; set; }
     }
+
+    // ===== OnPropertyChanged Diagnostics =====
+
+    // PGA1009: Target property not found for GenerateOnPropertyChanged
+    [GenerateOnPropertyChanged("NonExistentProperty")]
+    public partial class TestOnChangedTargetNotFound : AvaloniaObject
+    {
+    }
+
+    // PGA1010: GenerateOnPropertyChanged disabled by DoNotGenerateOnPropertyChanged
+    [GenerateOnPropertyChanged("SomeProperty")]
+    [DoNotGenerateOnPropertyChanged]
+    public partial class TestOnChangedDisabled : AvaloniaObject
+    {
+    }
 }
