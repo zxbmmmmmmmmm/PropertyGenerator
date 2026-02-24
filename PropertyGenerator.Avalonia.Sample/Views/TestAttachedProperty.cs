@@ -57,44 +57,44 @@ public partial class TestAttachedProperty : AvaloniaObject
         return value;
     }
 
-    private static bool CoerceAttachedWithOptions(AvaloniaObject host, bool value)
+    private static bool CoerceAttachedWithOptions(TestAttachedProperty host, bool value)
     {
         _ = host;
         return value;
     }
 
-    static partial void OnAttachedTestPropPropertyChanged(AvaloniaObject host, AvaloniaPropertyChangedEventArgs e)
+    static partial void OnAttachedTestPropPropertyChanged(TestAttachedProperty host, AvaloniaPropertyChangedEventArgs e)
     {
         _ = host;
         _ = e;
     }
 
-    static partial void OnAttachedTestPropPropertyChanged(AvaloniaObject host, string newValue)
+    static partial void OnAttachedTestPropPropertyChanged(TestAttachedProperty host, string newValue)
     {
         _ = host;
         _ = newValue;
     }
 
-    static partial void OnAttachedTestPropPropertyChanged(AvaloniaObject host, string oldValue, string newValue)
+    static partial void OnAttachedTestPropPropertyChanged(TestAttachedProperty host, string oldValue, string newValue)
     {
         _ = host;
         _ = oldValue;
         _ = newValue;
     }
 
-    static partial void OnAttachedIntPropPropertyChanged(AvaloniaObject host, AvaloniaPropertyChangedEventArgs e)
+    static partial void OnAttachedIntPropPropertyChanged(TestAttachedProperty host, AvaloniaPropertyChangedEventArgs e)
     {
         _ = host;
         _ = e;
     }
 
-    static partial void OnAttachedIntPropPropertyChanged(AvaloniaObject host, int newValue)
+    static partial void OnAttachedIntPropPropertyChanged(TestAttachedProperty host, int newValue)
     {
         _ = host;
         _ = newValue;
     }
 
-    static partial void OnAttachedIntPropPropertyChanged(AvaloniaObject host, int oldValue, int newValue)
+    static partial void OnAttachedIntPropPropertyChanged(TestAttachedProperty host, int oldValue, int newValue)
     {
         _ = host;
         _ = oldValue;
@@ -119,4 +119,3 @@ public partial class TestAttachedPropertyWithoutOnChanged : AvaloniaObject
         return GetSilentAttachedNumber(this);
     }
 }
-

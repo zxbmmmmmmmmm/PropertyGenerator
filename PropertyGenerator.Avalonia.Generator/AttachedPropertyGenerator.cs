@@ -251,7 +251,7 @@ public class AttachedPropertyGenerator : IIncrementalGenerator
                 Identifier($"On{attachedProperty.Name}PropertyChanged"))
             .AddModifiers(Token(SyntaxKind.StaticKeyword), Token(SyntaxKind.PartialKeyword))
             .AddParameterListParameters(
-                Parameter(Identifier("host")).WithType(IdentifierName("global::Avalonia.AvaloniaObject")),
+                Parameter(Identifier("host")).WithType(attachedProperty.HostType.GetTypeSyntax()),
                 Parameter(Identifier("e"))
                     .WithType(IdentifierName("global::Avalonia.AvaloniaPropertyChangedEventArgs")))
             .WithSemicolonToken(Token(SyntaxKind.SemicolonToken))
@@ -266,7 +266,7 @@ public class AttachedPropertyGenerator : IIncrementalGenerator
                 Identifier($"On{attachedProperty.Name}PropertyChanged"))
             .AddModifiers(Token(SyntaxKind.StaticKeyword), Token(SyntaxKind.PartialKeyword))
             .AddParameterListParameters(
-                Parameter(Identifier("host")).WithType(IdentifierName("global::Avalonia.AvaloniaObject")),
+                Parameter(Identifier("host")).WithType(attachedProperty.HostType.GetTypeSyntax()),
                 Parameter(Identifier("newValue")).WithType(attachedProperty.ValueType.GetTypeSyntax()))
             .WithSemicolonToken(Token(SyntaxKind.SemicolonToken))
             .AddAttributeLists(AttributeList(SingletonSeparatedList(GeneratedCodeAttribute())));
@@ -280,7 +280,7 @@ public class AttachedPropertyGenerator : IIncrementalGenerator
                 Identifier($"On{attachedProperty.Name}PropertyChanged"))
             .AddModifiers(Token(SyntaxKind.StaticKeyword), Token(SyntaxKind.PartialKeyword))
             .AddParameterListParameters(
-                Parameter(Identifier("host")).WithType(IdentifierName("global::Avalonia.AvaloniaObject")),
+                Parameter(Identifier("host")).WithType(attachedProperty.HostType.GetTypeSyntax()),
                 Parameter(Identifier("oldValue")).WithType(attachedProperty.ValueType.GetTypeSyntax()),
                 Parameter(Identifier("newValue")).WithType(attachedProperty.ValueType.GetTypeSyntax()))
             .WithSemicolonToken(Token(SyntaxKind.SemicolonToken))
