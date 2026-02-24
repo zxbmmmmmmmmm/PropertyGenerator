@@ -32,18 +32,6 @@ public class StyledPropertyGenerator : IIncrementalGenerator
                         return false;
                     }
 
-                    // Make sure that all containing types are partial, otherwise declaring a partial property
-                    // would not be valid. We don't need to emit diagnostics here, the compiler will handle that.
-                    for (var parentNode = node.FirstAncestor<TypeDeclarationSyntax>();
-                         parentNode is not null;
-                         parentNode = parentNode.FirstAncestor<TypeDeclarationSyntax>())
-                    {
-                        if (!parentNode.Modifiers.Any(SyntaxKind.PartialKeyword))
-                        {
-                            return false;
-                        }
-                    }
-
                     // Here we can also easily filter out ref-returning properties just using syntax
                     return !((PropertyDeclarationSyntax) node).Type.IsKind(SyntaxKind.RefType);
                 },
@@ -63,8 +51,30 @@ public class StyledPropertyGenerator : IIncrementalGenerator
             foreach (var group in ctx.GroupBy<PropertyTuple, INamedTypeSymbol?>(p => p.PropertySymbol.ContainingType, SymbolEqualityComparer.Default))
             {
                 var containingClass = group.Key;
-                if (containingClass is null || !containingClass.InheritsFromFullyQualifiedMetadataName("Avalonia.AvaloniaObject"))
+                if (containingClass is null)
                 {
+                    continue;
+                }
+
+                // Check if all containing types are partial
+                if (!containingClass.DeclaringSyntaxReferences
+                        .Any(r => r.GetSyntax() is ClassDeclarationSyntax cls &&
+                                  cls.Modifiers.Any(SyntaxKind.PartialKeyword)))
+                {
+                    spc.ReportDiagnostic(Diagnostic.Create(
+                        GeneratorDiagnostics.ContainingTypeMustBePartial,
+                        containingClass.Locations.FirstOrDefault(),
+                        containingClass.Name, "GeneratedStyledPropertyAttribute"));
+                    continue;
+                }
+
+                // Check if the containing class inherits from AvaloniaObject
+                if (!containingClass.InheritsFromFullyQualifiedMetadataName("Avalonia.AvaloniaObject"))
+                {
+                    spc.ReportDiagnostic(Diagnostic.Create(
+                        GeneratorDiagnostics.TypeMustInheritAvaloniaObject,
+                        containingClass.Locations.FirstOrDefault(),
+                        containingClass.Name, "GeneratedStyledPropertyAttribute"));
                     continue;
                 }
 

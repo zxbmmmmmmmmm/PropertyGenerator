@@ -57,14 +57,6 @@ internal static class GeneratorDiagnostics
         defaultSeverity: DiagnosticSeverity.Error,
         isEnabledByDefault: true);
 
-    //public static readonly DiagnosticDescriptor InvalidAttachedHostType = new(
-    //    id: "PGA1007",
-    //    title: "Invalid attached host type",
-    //    messageFormat: "Attached property '{0}' has host type '{1}', which must inherit from 'Avalonia.AvaloniaObject'",
-    //    category: Category,
-    //    defaultSeverity: DiagnosticSeverity.Error,
-    //    isEnabledByDefault: true);
-
     public static readonly DiagnosticDescriptor ContainingTypeMustBePartial = new(
         id: "PGA1007",
         title: "Containing type must be partial",
