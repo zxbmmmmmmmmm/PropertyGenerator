@@ -22,7 +22,7 @@ internal static class DefaultValueHelper
         {
             if (defaultValueCallback is { Type.SpecialType: SpecialType.System_String, Value: string { Length: > 0 } methodName })
             {
-                if (TryFindDefaultValueCallbackMethod(propertySymbol.Type, methodName, out var methodSymbol))
+                if (TryFindDefaultValueCallbackMethod(propertySymbol.ContainingType, methodName, out var methodSymbol))
                 {
                     if (IsDefaultValueCallbackValid(propertySymbol.Type, methodSymbol))
                     {
