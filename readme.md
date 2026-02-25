@@ -117,10 +117,10 @@ public partial IEnumerable? Items { get => field; set => SetAndRaise(ItemsProper
 
 ## Attached Property
 
-Define attached properties on a partial class by using `GeneratedAttachedProperty<THost, TValue>`:
+Define attached properties on a partial class by using `GenerateAttachedProperty<THost, TValue>`:
 
 ```csharp
-[GeneratedAttachedProperty<Control, string>("Tag")]
+[GenerateAttachedProperty<Control, string>("Tag")]
 public partial class MainWindow : AvaloniaObject
 {
 }
@@ -140,7 +140,7 @@ public static void SetTag(Control host, string value) => host.SetValue(TagProper
 You can configure default value and registration options:
 
 ```csharp
-[GeneratedAttachedProperty<Control, bool>("IsBusy",
+[GenerateAttachedProperty<Control, bool>("IsBusy",
     DefaultValueCallback = nameof(GetDefaultIsBusy),
     Validate = nameof(ValidateIsBusy),
     Coerce = nameof(CoerceIsBusy),

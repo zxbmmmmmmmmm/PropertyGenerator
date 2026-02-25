@@ -10,27 +10,27 @@ namespace PropertyGenerator.Avalonia.Sample.Views;
     // ===== Attached Property Diagnostics =====
 
     // PGA1006: Invalid attached property names
-    [GeneratedAttachedProperty<TestAttachedPropertyInvalidNames, string>("")]
-    [GeneratedAttachedProperty<TestAttachedPropertyInvalidNames, string>("1NotAnIdentifier")]
+    [GenerateAttachedProperty<TestAttachedPropertyInvalidNames, string>("")]
+    [GenerateAttachedProperty<TestAttachedPropertyInvalidNames, string>("1NotAnIdentifier")]
     public partial class TestAttachedPropertyInvalidNames : AvaloniaObject
     {
     }
 
     // PGA1002 (CS0311): Non-AvaloniaObject host type (caught by compiler generic constraint)
-    [GeneratedAttachedProperty<TestNonAvaloniaObject, string>("TestNonAvaloniaObjectProp")]
+    [GenerateAttachedProperty<TestNonAvaloniaObject, string>("TestNonAvaloniaObjectProp")]
     public partial class TestNonAvaloniaObject
     {
     }
 
     // PGA1008: Duplicate attached property name
-    [GeneratedAttachedProperty<AvaloniaObject, string>("TestDuplicatedProp")]
-    [GeneratedAttachedProperty<AvaloniaObject, string>("TestDuplicatedProp")]
+    [GenerateAttachedProperty<AvaloniaObject, string>("TestDuplicatedProp")]
+    [GenerateAttachedProperty<AvaloniaObject, string>("TestDuplicatedProp")]
     public partial class TestDuplicated
     {
     }
 
     // PGA1007: Containing type not partial (attached)
-    [GeneratedAttachedProperty<AvaloniaObject, string>("SilentAttachedText", DefaultValue = "silent")]
+    [GenerateAttachedProperty<AvaloniaObject, string>("SilentAttachedText", DefaultValue = "silent")]
     public class TestNoPartial
     {
     }

@@ -10,7 +10,7 @@ public class TestNestedClass
         public partial int Foo { get; set; }
     }
     
-    [GeneratedAttachedProperty<NestedAttached, string>("Bar")]
+    [GenerateAttachedProperty<NestedAttached, string>("Bar")]
     partial class NestedAttached : AvaloniaObject
     {
         public NestedAttached()

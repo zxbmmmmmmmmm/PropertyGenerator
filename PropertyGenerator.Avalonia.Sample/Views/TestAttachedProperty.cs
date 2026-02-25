@@ -4,17 +4,17 @@ using Avalonia.Data;
 
 namespace PropertyGenerator.Avalonia.Sample.Views;
 
-[GeneratedAttachedProperty<TestAttachedProperty, string>("AttachedTestProp")]
-[GeneratedAttachedProperty<TestAttachedProperty, int>("AttachedIntProp", DefaultValue = 114514)]
-[GeneratedAttachedProperty<TestAttachedProperty, bool>("AttachedWithOptions",
+[GenerateAttachedProperty<TestAttachedProperty, string>("AttachedTestProp")]
+[GenerateAttachedProperty<TestAttachedProperty, int>("AttachedIntProp", DefaultValue = 114514)]
+[GenerateAttachedProperty<TestAttachedProperty, bool>("AttachedWithOptions",
     DefaultValueCallback = nameof(GetDefaultAttachedWithOptions),
     Validate = nameof(ValidateAttachedWithOptions),
     Coerce = nameof(CoerceAttachedWithOptions),
     Inherits = true,
     DefaultBindingMode = BindingMode.TwoWay)]
-[GeneratedAttachedProperty<Control, double>("AttachedOpacity", DefaultValue = 1.0)]
-[GeneratedAttachedProperty<TestAttachedProperty, string>("DuplicateAttachedName")]
-[GeneratedAttachedProperty<TestAttachedProperty, string>("DuplicateAttachedName", DefaultValue = "duplicate")]
+[GenerateAttachedProperty<Control, double>("AttachedOpacity", DefaultValue = 1.0)]
+[GenerateAttachedProperty<TestAttachedProperty, string>("DuplicateAttachedName")]
+[GenerateAttachedProperty<TestAttachedProperty, string>("DuplicateAttachedName", DefaultValue = "duplicate")]
 public partial class TestAttachedProperty : AvaloniaObject
 {
     string ExerciseBasic()
@@ -103,8 +103,8 @@ public partial class TestAttachedProperty : AvaloniaObject
 }
 
 [DoNotGenerateOnPropertyChanged]
-[GeneratedAttachedProperty<TestAttachedPropertyWithoutOnChanged, string>("SilentAttachedText", DefaultValue = "silent")]
-[GeneratedAttachedProperty<TestAttachedPropertyWithoutOnChanged, int>("SilentAttachedNumber", DefaultValue = 10, Inherits = true)]
+[GenerateAttachedProperty<TestAttachedPropertyWithoutOnChanged, string>("SilentAttachedText", DefaultValue = "silent")]
+[GenerateAttachedProperty<TestAttachedPropertyWithoutOnChanged, int>("SilentAttachedNumber", DefaultValue = 10, Inherits = true)]
 public partial class TestAttachedPropertyWithoutOnChanged : AvaloniaObject
 {
     string ExerciseSilentText()

@@ -20,7 +20,7 @@ namespace PropertyGenerator.Avalonia.Generator;
 [Generator]
 public class AttachedPropertyGenerator : IIncrementalGenerator
 {
-    private const string AttributeFullName = "PropertyGenerator.Avalonia.GeneratedAttachedPropertyAttribute`2";
+    private const string AttributeFullName = "PropertyGenerator.Avalonia.GenerateAttachedPropertyAttribute`2";
 
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
@@ -52,7 +52,7 @@ public class AttachedPropertyGenerator : IIncrementalGenerator
             foreach (var ownerType in distinctOwnerTypes)
             {
                 // Check if the containing class is partial
-                if (!DiagnosticHelper.CheckContainingTypeIsPartial(spc, ownerType, "GeneratedAttachedPropertyAttribute"))
+                if (!DiagnosticHelper.CheckContainingTypeIsPartial(spc, ownerType, "GenerateAttachedPropertyAttribute"))
                     continue;
 
                 var attributes = ownerType.GetAttributes().Where(IsAttachedPropertyAttribute).ToList();
@@ -463,7 +463,7 @@ public class AttachedPropertyGenerator : IIncrementalGenerator
     {
         return attributeData.AttributeClass is
         {
-            MetadataName: "GeneratedAttachedPropertyAttribute`2",
+            MetadataName: "GenerateAttachedPropertyAttribute`2",
             ContainingNamespace: { } containingNamespace
         } && containingNamespace.ToDisplayString() == "PropertyGenerator.Avalonia";
     }
