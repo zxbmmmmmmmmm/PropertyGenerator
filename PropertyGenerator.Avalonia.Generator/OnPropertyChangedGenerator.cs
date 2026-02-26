@@ -65,10 +65,21 @@ public class OnPropertyChangedGenerator : IIncrementalGenerator
 
             // 获取Attribute中对应的属性
             var generateOnPropertyChangedAttributeSymbol = compilation.GetTypeByMetadataName(GenerateOnPropertyChangedAttributeFullName);
+            var doNotGenerateOnPropertyChangedAttributeSymbols = compilation.GetTypesByMetadataName("PropertyGenerator.Avalonia.DoNotGenerateOnPropertyChangedAttribute");
             if (generateOnPropertyChangedAttributeSymbol is not null)
             {
                 foreach (var (targetClass, semanticModel) in onPropertyChangedAttributeTargets)
                 {
+                    if (targetClass.HasAttributeWithAnyType(doNotGenerateOnPropertyChangedAttributeSymbols)
+                        || compilation.Assembly.HasAttributeWithAnyType(doNotGenerateOnPropertyChangedAttributeSymbols))
+                    {
+                        spc.ReportDiagnostic(Diagnostic.Create(
+                            GeneratorDiagnostics.GenerateOnPropertyChangedDisabled,
+                            targetClass.Locations[0],
+                            targetClass.Name));
+                        continue;
+                    }
+
                     var attributes = targetClass.GetAttributes().Where(ad => SymbolEqualityComparer.Default.Equals(ad.AttributeClass, generateOnPropertyChangedAttributeSymbol));
 
                     foreach (var attributeData in attributes)
@@ -109,6 +120,14 @@ public class OnPropertyChangedGenerator : IIncrementalGenerator
                         {
                             generationTargets.Add((targetClass, propertySymbol, semanticModel));
                         }
+                        else
+                        {
+                            spc.ReportDiagnostic(Diagnostic.Create(
+                                GeneratorDiagnostics.GenerateOnPropertyChangedTargetNotFound,
+                                attributeData.ApplicationSyntaxReference?.GetSyntax().GetLocation(),
+                                propertyName,
+                                targetClass.Name));
+                        }
                     }
                 }
             }
@@ -116,12 +135,15 @@ public class OnPropertyChangedGenerator : IIncrementalGenerator
             foreach (var group in generationTargets.GroupBy<GenerationTargetTuple, INamedTypeSymbol?>(p => p.TargetClass, SymbolEqualityComparer.Default))
             {
                 var containingClass = group.Key;
-                if (containingClass is null || !containingClass.InheritsFromFullyQualifiedMetadataName("Avalonia.AvaloniaObject"))
+                if (containingClass is null
+                    || !containingClass.InheritsFromFullyQualifiedMetadataName("Avalonia.AvaloniaObject")
+                    || !containingClass.DeclaringSyntaxReferences
+                        .Any(r => r.GetSyntax() is ClassDeclarationSyntax cls
+                                  && cls.Modifiers.Any(SyntaxKind.PartialKeyword)))
                 {
                     continue;
                 }
 
-                var doNotGenerateOnPropertyChangedAttributeSymbols = compilation.GetTypesByMetadataName("PropertyGenerator.Avalonia.DoNotGenerateOnPropertyChangedAttribute");
                 var generateOnPropertyChanged = !containingClass.HasAttributeWithAnyType(doNotGenerateOnPropertyChangedAttributeSymbols)
                                                   && !compilation.Assembly.HasAttributeWithAnyType(doNotGenerateOnPropertyChangedAttributeSymbols);
 

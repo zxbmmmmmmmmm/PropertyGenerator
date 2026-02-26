@@ -4,17 +4,17 @@ using Avalonia.Data;
 
 namespace PropertyGenerator.Avalonia.Sample.Views;
 
-[GeneratedAttachedProperty<TestAttachedProperty, string>("AttachedTestProp")]
-[GeneratedAttachedProperty<TestAttachedProperty, int>("AttachedIntProp", DefaultValue = 114514)]
-[GeneratedAttachedProperty<TestAttachedProperty, bool>("AttachedWithOptions",
+[GenerateAttachedProperty<TestAttachedProperty, string>("AttachedTestProp")]
+[GenerateAttachedProperty<TestAttachedProperty, int>("AttachedIntProp", DefaultValue = 114514)]
+[GenerateAttachedProperty<TestAttachedProperty, bool>("AttachedWithOptions",
     DefaultValueCallback = nameof(GetDefaultAttachedWithOptions),
     Validate = nameof(ValidateAttachedWithOptions),
     Coerce = nameof(CoerceAttachedWithOptions),
     Inherits = true,
     DefaultBindingMode = BindingMode.TwoWay)]
-[GeneratedAttachedProperty<Control, double>("AttachedOpacity", DefaultValue = 1.0)]
-[GeneratedAttachedProperty<TestAttachedProperty, string>("DuplicateAttachedName")]
-[GeneratedAttachedProperty<TestAttachedProperty, string>("DuplicateAttachedName", DefaultValue = "duplicate")]
+[GenerateAttachedProperty<Control, double>("AttachedOpacity", DefaultValue = 1.0)]
+[GenerateAttachedProperty<TestAttachedProperty, string>("DuplicateAttachedName")]
+[GenerateAttachedProperty<TestAttachedProperty, string>("DuplicateAttachedName", DefaultValue = "duplicate")]
 public partial class TestAttachedProperty : AvaloniaObject
 {
     string ExerciseBasic()
@@ -57,44 +57,44 @@ public partial class TestAttachedProperty : AvaloniaObject
         return value;
     }
 
-    private static bool CoerceAttachedWithOptions(AvaloniaObject host, bool value)
+    private static bool CoerceAttachedWithOptions(TestAttachedProperty host, bool value)
     {
         _ = host;
         return value;
     }
 
-    static partial void OnAttachedTestPropPropertyChanged(AvaloniaObject host, AvaloniaPropertyChangedEventArgs e)
+    static partial void OnAttachedTestPropPropertyChanged(TestAttachedProperty host, AvaloniaPropertyChangedEventArgs e)
     {
         _ = host;
         _ = e;
     }
 
-    static partial void OnAttachedTestPropPropertyChanged(AvaloniaObject host, string newValue)
+    static partial void OnAttachedTestPropPropertyChanged(TestAttachedProperty host, string newValue)
     {
         _ = host;
         _ = newValue;
     }
 
-    static partial void OnAttachedTestPropPropertyChanged(AvaloniaObject host, string oldValue, string newValue)
+    static partial void OnAttachedTestPropPropertyChanged(TestAttachedProperty host, string oldValue, string newValue)
     {
         _ = host;
         _ = oldValue;
         _ = newValue;
     }
 
-    static partial void OnAttachedIntPropPropertyChanged(AvaloniaObject host, AvaloniaPropertyChangedEventArgs e)
+    static partial void OnAttachedIntPropPropertyChanged(TestAttachedProperty host, AvaloniaPropertyChangedEventArgs e)
     {
         _ = host;
         _ = e;
     }
 
-    static partial void OnAttachedIntPropPropertyChanged(AvaloniaObject host, int newValue)
+    static partial void OnAttachedIntPropPropertyChanged(TestAttachedProperty host, int newValue)
     {
         _ = host;
         _ = newValue;
     }
 
-    static partial void OnAttachedIntPropPropertyChanged(AvaloniaObject host, int oldValue, int newValue)
+    static partial void OnAttachedIntPropPropertyChanged(TestAttachedProperty host, int oldValue, int newValue)
     {
         _ = host;
         _ = oldValue;
@@ -103,8 +103,8 @@ public partial class TestAttachedProperty : AvaloniaObject
 }
 
 [DoNotGenerateOnPropertyChanged]
-[GeneratedAttachedProperty<TestAttachedPropertyWithoutOnChanged, string>("SilentAttachedText", DefaultValue = "silent")]
-[GeneratedAttachedProperty<TestAttachedPropertyWithoutOnChanged, int>("SilentAttachedNumber", DefaultValue = 10, Inherits = true)]
+[GenerateAttachedProperty<TestAttachedPropertyWithoutOnChanged, string>("SilentAttachedText", DefaultValue = "silent")]
+[GenerateAttachedProperty<TestAttachedPropertyWithoutOnChanged, int>("SilentAttachedNumber", DefaultValue = 10, Inherits = true)]
 public partial class TestAttachedPropertyWithoutOnChanged : AvaloniaObject
 {
     string ExerciseSilentText()
@@ -118,10 +118,4 @@ public partial class TestAttachedPropertyWithoutOnChanged : AvaloniaObject
         SetSilentAttachedNumber(this, 10);
         return GetSilentAttachedNumber(this);
     }
-}
-
-[GeneratedAttachedProperty<TestAttachedPropertyInvalidNames, string>("")]
-[GeneratedAttachedProperty<TestAttachedPropertyInvalidNames, string>("1NotAnIdentifier")]
-public partial class TestAttachedPropertyInvalidNames : AvaloniaObject
-{
 }

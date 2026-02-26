@@ -3,7 +3,7 @@
 [![NuGet Version](https://img.shields.io/nuget/vpre/PropertyGenerator.Avalonia)](https://www.nuget.org/packages/PropertyGenerator.Avalonia)
 [![NuGet Downloads](https://img.shields.io/nuget/dt/PropertyGenerator.Avalonia)](https://www.nuget.org/packages/PropertyGenerator.Avalonia)
 
-Auto generate `StyledProperty` and `DirectProperty` for Avalonia applications
+Auto generate `StyledProperty`, `DirectProperty`, and `AttachedProperty` for Avalonia applications
 
 ## StyledProperty
 
@@ -115,8 +115,58 @@ public static readonly DirectProperty<MainWindow, IEnumerable?> ItemsProperty
 public partial IEnumerable? Items { get => field; set => SetAndRaise(ItemsProperty, ref field, value); }
 ```
 
-## OnPropertyChanged
+## Attached Property
 
+Define attached properties on a partial class by using `GenerateAttachedProperty<THost, TValue>`:
+
+```csharp
+[GenerateAttachedProperty<Control, string>("Tag")]
+public partial class MainWindow : AvaloniaObject
+{
+}
+```
+
+Generated code:
+
+```csharp
+public static readonly AttachedProperty<string> TagProperty = RegisterTagProperty();
+
+public static string GetTag(Control host) => host.GetValue(TagProperty);
+public static void SetTag(Control host, string value) => host.SetValue(TagProperty, value);
+```
+
+***
+
+You can configure default value and registration options:
+
+```csharp
+[GenerateAttachedProperty<Control, bool>("IsBusy",
+    DefaultValueCallback = nameof(GetDefaultIsBusy),
+    Validate = nameof(ValidateIsBusy),
+    Coerce = nameof(CoerceIsBusy),
+    Inherits = true,
+    DefaultBindingMode = BindingMode.TwoWay)]
+public partial class MainWindow : AvaloniaObject
+{
+    private static bool GetDefaultIsBusy() => true;
+    private static bool ValidateIsBusy(bool value) => value;
+    private static bool CoerceIsBusy(Control host, bool value) => value;
+}
+```
+
+By default, attached property generation also emits these static partial callbacks:
+
+```csharp
+static partial void OnIsBusyPropertyChanged(Control host, AvaloniaPropertyChangedEventArgs e);
+static partial void OnIsBusyPropertyChanged(Control host, bool newValue);
+static partial void OnIsBusyPropertyChanged(Control host, bool oldValue, bool newValue);
+```
+
+Apply `DoNotGenerateOnPropertyChangedAttribute` to disable those callbacks.
+
+
+
+## OnPropertyChanged
 By default, the generator will override `OnPropertyChanged` and generate property changed methods at the same time:
 
 ```csharp
@@ -163,3 +213,18 @@ public partial class MainWindow : Window
 ```csharp
 [assembly: DoNotGenerateOnPropertyChanged]
 ```
+
+## Diagnostics
+
+| Rule ID | Severity | Area             | Notes                                                      |
+| ------- | -------- | ---------------- | ---------------------------------------------------------- |
+| PGA1001 | Error    | Styled/Direct    | invalid property declaration shape for generated property. |
+| PGA1002 | Error    | Styled/Direct    | containing type must inherit AvaloniaObject.              |
+| PGA1003 | Error    | Styled/Direct    | callback method not found.                                 |
+| PGA1004 | Error    | Styled/Direct    | callback method signature invalid.                         |
+| PGA1005 | Error    | Direct           | invalid direct getter/setter method reference.             |
+| PGA1006 | Error    | Attached         | invalid attached property name.                            |
+| PGA1007 | Error    | All generators   | containing type must be partial.                           |
+| PGA1008 | Warning  | Attached         | duplicate attached property name on owner.                 |
+| PGA1009 | Warning  | OnPropertyChanged| GenerateOnPropertyChanged target property not found.       |
+| PGA1010 | Warning  | OnPropertyChanged| GenerateOnPropertyChanged disabled.                        |

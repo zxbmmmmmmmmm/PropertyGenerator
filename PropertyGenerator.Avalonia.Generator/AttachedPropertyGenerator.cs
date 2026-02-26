@@ -20,14 +20,13 @@ namespace PropertyGenerator.Avalonia.Generator;
 [Generator]
 public class AttachedPropertyGenerator : IIncrementalGenerator
 {
-    private const string AttributeFullName = "PropertyGenerator.Avalonia.GeneratedAttachedPropertyAttribute`2";
+    private const string AttributeFullName = "PropertyGenerator.Avalonia.GenerateAttachedPropertyAttribute`2";
 
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
         var ownerTypes = context.ForAttributeWithMetadataNameAndOptions(
                 AttributeFullName,
-                predicate: (node, _) => node is ClassDeclarationSyntax classNode &&
-                                        classNode.Modifiers.Any(SyntaxKind.PartialKeyword),
+                predicate: (node, _) => node is ClassDeclarationSyntax classNode,
                 transform: (ctx, _) => ctx.TargetSymbol)
             .Where(owner => owner is not null);
 
@@ -52,6 +51,10 @@ public class AttachedPropertyGenerator : IIncrementalGenerator
 
             foreach (var ownerType in distinctOwnerTypes)
             {
+                // Check if the containing class is partial
+                if (!DiagnosticHelper.CheckContainingTypeIsPartial(spc, ownerType, "GenerateAttachedPropertyAttribute"))
+                    continue;
+
                 var attributes = ownerType.GetAttributes().Where(IsAttachedPropertyAttribute).ToList();
                 if (attributes.Count == 0)
                 {
@@ -67,6 +70,10 @@ public class AttachedPropertyGenerator : IIncrementalGenerator
                         string.IsNullOrWhiteSpace(name) ||
                         !SyntaxFacts.IsValidIdentifier(name))
                     {
+                        spc.ReportDiagnostic(Diagnostic.Create(
+                            GeneratorDiagnostics.InvalidAttachedPropertyName,
+                            attribute.ApplicationSyntaxReference?.GetSyntax().GetLocation(),
+                            name ?? ""));
                         continue;
                     }
 
@@ -77,16 +84,10 @@ public class AttachedPropertyGenerator : IIncrementalGenerator
                         continue;
                     }
 
-                    if (!IsAvaloniaObject(hostType))
-                    {
-                        continue;
-                    }
-
-
                     candidates.Add(new AttachedPropertyCandidate(attribute, name, hostType, valueType));
                 }
 
-                var sourceCode = GenerateClassSource(compilation, ownerType, DistinctByName(candidates));
+                var sourceCode = GenerateClassSource(compilation, ownerType, DistinctByName(spc, candidates));
 
                 spc.AddSource(
                     $"{ownerType.ContainingNamespace.ToDisplayString()}.{ownerType.Name}.Attached.g.cs",
@@ -94,6 +95,7 @@ public class AttachedPropertyGenerator : IIncrementalGenerator
                 continue;
 
                 static IEnumerable<AttachedPropertyCandidate> DistinctByName(
+                    SourceProductionContext spc,
                     IEnumerable<AttachedPropertyCandidate> source
                 )
                 {
@@ -104,6 +106,14 @@ public class AttachedPropertyGenerator : IIncrementalGenerator
                         if (seenKeys.Add(element.Name))
                         {
                             yield return element;
+                        }
+                        else
+                        {
+                            spc.ReportDiagnostic(Diagnostic.Create(
+                                GeneratorDiagnostics.DuplicateAttachedPropertyName,
+                                element.Attribute.ApplicationSyntaxReference?.GetSyntax().GetLocation(),
+                                element.Name, element.HostType.Name
+                            ));
                         }
                     }
                 }
@@ -241,7 +251,7 @@ public class AttachedPropertyGenerator : IIncrementalGenerator
                 Identifier($"On{attachedProperty.Name}PropertyChanged"))
             .AddModifiers(Token(SyntaxKind.StaticKeyword), Token(SyntaxKind.PartialKeyword))
             .AddParameterListParameters(
-                Parameter(Identifier("host")).WithType(IdentifierName("global::Avalonia.AvaloniaObject")),
+                Parameter(Identifier("host")).WithType(attachedProperty.HostType.GetTypeSyntax()),
                 Parameter(Identifier("e"))
                     .WithType(IdentifierName("global::Avalonia.AvaloniaPropertyChangedEventArgs")))
             .WithSemicolonToken(Token(SyntaxKind.SemicolonToken))
@@ -256,7 +266,7 @@ public class AttachedPropertyGenerator : IIncrementalGenerator
                 Identifier($"On{attachedProperty.Name}PropertyChanged"))
             .AddModifiers(Token(SyntaxKind.StaticKeyword), Token(SyntaxKind.PartialKeyword))
             .AddParameterListParameters(
-                Parameter(Identifier("host")).WithType(IdentifierName("global::Avalonia.AvaloniaObject")),
+                Parameter(Identifier("host")).WithType(attachedProperty.HostType.GetTypeSyntax()),
                 Parameter(Identifier("newValue")).WithType(attachedProperty.ValueType.GetTypeSyntax()))
             .WithSemicolonToken(Token(SyntaxKind.SemicolonToken))
             .AddAttributeLists(AttributeList(SingletonSeparatedList(GeneratedCodeAttribute())));
@@ -270,7 +280,7 @@ public class AttachedPropertyGenerator : IIncrementalGenerator
                 Identifier($"On{attachedProperty.Name}PropertyChanged"))
             .AddModifiers(Token(SyntaxKind.StaticKeyword), Token(SyntaxKind.PartialKeyword))
             .AddParameterListParameters(
-                Parameter(Identifier("host")).WithType(IdentifierName("global::Avalonia.AvaloniaObject")),
+                Parameter(Identifier("host")).WithType(attachedProperty.HostType.GetTypeSyntax()),
                 Parameter(Identifier("oldValue")).WithType(attachedProperty.ValueType.GetTypeSyntax()),
                 Parameter(Identifier("newValue")).WithType(attachedProperty.ValueType.GetTypeSyntax()))
             .WithSemicolonToken(Token(SyntaxKind.SemicolonToken))
@@ -453,7 +463,7 @@ public class AttachedPropertyGenerator : IIncrementalGenerator
     {
         return attributeData.AttributeClass is
         {
-            MetadataName: "GeneratedAttachedPropertyAttribute`2",
+            MetadataName: "GenerateAttachedPropertyAttribute`2",
             ContainingNamespace: { } containingNamespace
         } && containingNamespace.ToDisplayString() == "PropertyGenerator.Avalonia";
     }

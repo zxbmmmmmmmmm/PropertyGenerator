@@ -5,7 +5,7 @@ using Avalonia.Data;
 namespace PropertyGenerator.Avalonia;
 
 [AttributeUsage(AttributeTargets.Class, Inherited = false, AllowMultiple = true)]
-public sealed class GeneratedAttachedPropertyAttribute<THost, TValue> : Attribute
+public sealed class GenerateAttachedPropertyAttribute<THost, TValue> : Attribute
     where THost : AvaloniaObject
 {
     public string Name { get; }
@@ -22,7 +22,7 @@ public sealed class GeneratedAttachedPropertyAttribute<THost, TValue> : Attribut
 
     public string? Coerce { get; set; }
 
-    public GeneratedAttachedPropertyAttribute(string name)
+    public GenerateAttachedPropertyAttribute(string name)
     {
         Name = name;
     }
